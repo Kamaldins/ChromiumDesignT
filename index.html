@@ -1,0 +1,2161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DesignT | New Tab</title>
+<style>
+/* =========================================
+   DYNAMIC THEME VARIABLES
+   ========================================= */
+:root {
+  --bg: #282828;
+  --fg: #ebdbb2;
+  --columns: 4;
+  --pos-x: 0px;
+  --pos-y: 0px;
+  --search-width: 560px;
+  --search-y: 16px;
+  --search-z: 15px;
+  --radius: 16px;
+  --grid-gap: 50px;
+  --tile-size: 72px;
+  --icon-size: 36px;
+  --label-size: 11px;
+  --label-flex: column;
+  --font-family: 'Open Sans', system-ui, sans-serif;
+  --anim-height: 4px;
+  --bg-grad: none;
+  --bg-image: none;
+  --search-bg: color-mix(in srgb, var(--fg) 5%, var(--bg));
+  --search-text: var(--fg);
+  --search-border: color-mix(in srgb, var(--fg) 20%, transparent);
+  --clock-size: 14px;
+  
+  /* Unified Radius Scaling Variables */
+  --r-lg: clamp(0px, var(--radius), 24px);
+  --r-md: clamp(0px, var(--radius), 12px);
+  --r-sm: clamp(0px, var(--radius), 8px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow-x: hidden; }
+
+body {
+  background: var(--bg);
+  background-image: var(--bg-grad);
+  color: var(--fg);
+  font-family: var(--font-family);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Custom Background Image Overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  z-index: -1;
+}
+
+/* Main wrapper allows for X and Y offset adjustment */
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+  padding: 40px 20px;
+  transform: translate(var(--pos-x), var(--pos-y));
+}
+
+/* --- Typography & Elements --- */
+.clock {
+  font-size: var(--clock-size);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 30px;
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+}
+
+/* --- Custom Widget Container --- */
+#custom-widget-container {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 50;
+  display: none;
+  max-width: 300px;
+}
+#custom-widget-container.active { display: block; }
+
+/* --- Weather Widget (Themed to match Shortcuts) --- */
+.weather-widget {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: color-mix(in srgb, var(--fg) 8%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  border-radius: var(--r-lg); /* Unified Radius */
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  padding: 12px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 50;
+  width: 160px;
+  color: var(--fg);
+}
+.weather-widget.active { display: flex; }
+
+.weather-header { display: flex; justify-content: space-between; align-items: center; }
+.weather-loc { font-size: 14px; font-weight: 600; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.weather-dots { font-size: 18px; cursor: pointer; opacity: 0.6; line-height: 1; }
+
+.weather-main { display: flex; align-items: center; gap: 12px; background: color-mix(in srgb, var(--fg) 12%, var(--bg)); padding: 10px; border-radius: var(--r-md); min-height: 60px; }
+.weather-icon { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.weather-emoji { font-size: 32px; display: none; }
+.weather-temp { font-size: 28px; font-weight: bold; }
+
+.weather-highlow { font-size: 12px; opacity: 0.8; display: flex; justify-content: space-between; padding: 0 4px; }
+
+/* --- Center Taskbar Button --- */
+.center-btn-wrap {
+  display: none;
+  margin-bottom: 30px;
+}
+.center-btn-wrap.active { display: flex; }
+.center-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: color-mix(in srgb, var(--fg) 10%, var(--bg));
+  color: var(--fg);
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 var(--search-z) calc(var(--search-z) * 2) rgba(0,0,0,0.2);
+  transition: all 0.2s;
+}
+body:not(.no-anim) .center-btn:hover {
+  background: var(--fg);
+  color: var(--bg);
+  transform: translateY(-2px);
+}
+.center-btn img {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+/* --- Search Bar --- */
+.search-wrap {
+  width: 100%;
+  max-width: var(--search-width);
+  margin-bottom: var(--grid-gap);
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--search-y) 24px;
+  font-size: 15px;
+  font-family: var(--font-family);
+  background: var(--search-bg);
+  color: var(--search-text);
+  border: 1px solid var(--search-border);
+  border-radius: var(--r-lg); /* Unified Radius */
+  outline: none;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 var(--search-z) calc(var(--search-z) * 2) rgba(0,0,0,0.2);
+  transition: all 0.2s;
+}
+.search-input:focus { 
+  background: var(--search-text); 
+  color: var(--search-bg);
+  border-color: var(--search-text);
+}
+.search-input::placeholder { color: var(--search-text); opacity: 0.6; }
+.search-input:focus::placeholder { color: var(--search-bg); opacity: 0.6; }
+
+.engines {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.engines button {
+  background: color-mix(in srgb, var(--fg) 5%, var(--bg));
+  color: var(--fg);
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+  cursor: pointer;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-family: var(--font-family);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  border-radius: var(--r-sm);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+}
+.engines button:hover, 
+.engines button.active { 
+  background: var(--fg); 
+  color: var(--bg); 
+  border-color: var(--fg);
+}
+
+/* --- Shortcut Grid & Quick Menu (Glassmorphism) --- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), var(--tile-size));
+  gap: 24px 16px;
+  justify-content: center;
+}
+
+.tile-wrap, .placeholder-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--tile-size);
+}
+
+.tile {
+  display: flex;
+  flex-direction: var(--label-flex);
+  align-items: center;
+  gap: 8px;
+  color: var(--fg);
+  text-decoration: none;
+  width: 100%;
+}
+
+.tile-box, .placeholder-box {
+  width: var(--tile-size);
+  height: var(--tile-size);
+  background: color-mix(in srgb, var(--fg) 8%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  border-radius: var(--r-lg); /* Unified Radius */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.placeholder-box {
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--fg) 30%, transparent);
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: 300;
+  opacity: 0.5;
+}
+body:not(.no-anim) .placeholder-box:hover {
+  opacity: 1;
+  transform: translateY(-4px);
+  background: color-mix(in srgb, var(--fg) 10%, var(--bg));
+}
+
+body:not(.no-anim) .tile:hover .tile-box {
+  background: color-mix(in srgb, var(--fg) 15%, var(--bg));
+  transform: translateY(calc(-1 * var(--anim-height)));
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+.tile-img {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.tile-fallback {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: calc(var(--icon-size) / 2.5);
+  color: var(--fg);
+}
+
+.tile-label {
+  font-size: var(--label-size);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  max-width: calc(var(--tile-size) + 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  opacity: 0.8;
+}
+.placeholder-wrap .tile-label { opacity: 0; }
+
+/* Quick Edit Burger Menu */
+.tile-burger {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 2;
+  border-radius: 4px;
+}
+.tile-wrap:hover .tile-burger { opacity: 0.7; }
+.tile-burger:hover { opacity: 1 !important; background: var(--fg); color: var(--bg) !important; }
+
+.tile-drop {
+  position: absolute;
+  top: 26px;
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--fg);
+  border-radius: var(--r-sm);
+  display: none;
+  flex-direction: column;
+  z-index: 10;
+  overflow: hidden;
+  min-width: 100px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.tile-drop.active { display: flex; }
+.tile-drop button {
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  padding: 8px 16px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-align: left;
+}
+.tile-drop button:hover { background: var(--fg); color: var(--bg); }
+.tile-drop button.danger:hover { background: #ff4444; color: var(--bg); }
+
+/* --- Hints & Credits --- */
+.hint {
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.credits {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg);
+  opacity: 0.5;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.credits:hover { opacity: 1; }
+
+/* --- Floating Buttons (Settings & GitHub) --- */
+.floating-btn-group {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 100;
+}
+.mini-widget-btn, .settings-btn {
+  width: 40px;
+  height: 40px;
+  background: color-mix(in srgb, var(--fg) 10%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+  color: var(--fg);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.mini-widget-btn:hover, .settings-btn:hover { 
+  background: var(--fg);
+  color: var(--bg);
+}
+.mini-widget-btn img { width: 20px; height: 20px; }
+
+/* --- Side Menu (Sidebar) --- */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  display: none;
+  z-index: 90;
+}
+.sidebar-overlay.active { display: block; }
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: -440px;
+  width: 100%;
+  max-width: 440px;
+  height: 100vh;
+  background: var(--bg);
+  border-left: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+  transition: right 0.3s ease;
+  z-index: 100;
+  overflow-y: auto; /* Single scroll block for entire sidebar */
+  display: block;
+}
+.sidebar.active { right: 0; }
+
+.sidebar-sticky-top {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 20;
+  padding: 30px 20px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Settings Search */
+.settings-search-wrap {
+  margin-bottom: 15px;
+}
+.settings-search {
+  width: 100%;
+  background: color-mix(in srgb, var(--fg) 5%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+  padding: 10px 16px;
+  color: var(--fg);
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  outline: none;
+}
+.settings-search::placeholder { color: var(--fg); opacity: 0.5; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: none; /* Removed border to put on sticky top */
+  margin-bottom: 0;
+}
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  padding: 10px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  border-bottom: 2px solid transparent;
+}
+.tab-btn.active {
+  opacity: 1;
+  border-bottom-color: var(--fg);
+}
+
+.sidebar-content {
+  padding: 20px;
+}
+
+.tab-content {
+  display: none;
+  flex-direction: column;
+}
+.tab-content.active { display: flex; }
+
+/* Collapsible Accordion for decluttering */
+.accordion-item {
+  margin-bottom: 10px;
+  border: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.accordion-summary {
+  background: color-mix(in srgb, var(--fg) 5%, var(--bg));
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.accordion-summary::-webkit-details-marker { display: none; }
+.accordion-summary::after { content: '+'; font-size: 16px; opacity: 0.5; }
+.accordion-item[open] .accordion-summary::after { content: '-'; }
+.accordion-content { padding: 16px; }
+
+/* Settings Inputs */
+.settings-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  transition: background 0.3s;
+}
+.settings-row.highlight { background: color-mix(in srgb, var(--fg) 20%, transparent); }
+
+.shortcut-item, .engine-item {
+  border: 1px dashed color-mix(in srgb, var(--fg) 30%, transparent);
+  border-radius: var(--r-md);
+  padding: 10px;
+  margin-bottom: 10px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.shortcut-item:hover, .engine-item:hover { opacity: 1; }
+
+.set-input {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent);
+  padding: 10px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  min-width: 0;
+  border-radius: var(--r-sm);
+}
+.set-input:focus { background: color-mix(in srgb, var(--fg) 10%, var(--bg)); border-color: var(--fg); }
+.set-letter { flex: 0 0 50px; width: 50px; text-align: center; text-transform: uppercase; }
+.set-name { flex: 1; }
+.set-url { flex: 1; }
+.set-img { flex: 1; }
+textarea.set-input { resize: vertical; min-height: 120px; font-family: monospace; }
+textarea.code-input { resize: vertical; min-height: 200px; font-family: monospace; font-size: 11px; }
+
+/* Appearance Controls */
+.control-group { margin-bottom: 0; display: flex; flex-direction: column; gap: 8px; }
+.control-group label { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
+.control-group .sub-label { font-size: 10px; opacity: 0.6; text-transform: none; letter-spacing: 0.05em; margin-top: 5px; display: flex; justify-content: space-between; }
+.default-val { opacity: 0.5; font-style: italic; }
+
+.color-picker-wrap { display: flex; gap: 12px; }
+.color-picker { display: flex; align-items: center; gap: 8px; font-size: 12px; border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); padding: 6px; flex: 1; border-radius: var(--r-sm); }
+input[type="color"] { background: transparent; border: none; width: 24px; height: 24px; cursor: pointer; padding: 0; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 1px solid var(--fg); border-radius: 4px; }
+
+.range-wrap { display: flex; gap: 12px; align-items: center; }
+input[type="range"] { flex: 1; accent-color: var(--fg); }
+.num-input { width: 70px; padding: 6px; text-align: center; }
+
+select.set-input { cursor: pointer; background: var(--bg); }
+
+.checkbox-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
+.checkbox-wrap input { accent-color: var(--fg); width: 16px; height: 16px; cursor: pointer; }
+
+/* Autocomplete Dropdown */
+.autocomplete-wrap { position: relative; }
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--fg);
+  border-radius: var(--r-sm);
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 200;
+  display: none;
+  margin-top: 4px;
+}
+.autocomplete-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+}
+.autocomplete-item:hover { background: color-mix(in srgb, var(--fg) 10%, var(--bg)); }
+
+/* Shadcn-style Buttons */
+.action-btn { background: transparent; color: var(--fg); border: 1px solid var(--fg); padding: 12px; font-size: 12px; font-weight: bold; font-family: inherit; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; width: 100%; margin-top: 10px; transition: all 0.2s; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.action-btn:hover { background: var(--fg); color: var(--bg); }
+.action-btn.primary { background: var(--fg); color: var(--bg); margin-top: 20px; padding: 16px; }
+.action-btn.primary:hover { background: transparent; color: var(--fg); }
+.action-btn.secondary { border-color: color-mix(in srgb, var(--fg) 50%, transparent); opacity: 0.8; }
+
+.shadcn-input-group { display: flex; gap: 0; border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); border-radius: var(--r-sm); overflow: hidden; }
+.shadcn-input-group textarea { border: none; border-radius: 0; border-right: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); }
+.shadcn-copy-btn { background: color-mix(in srgb, var(--fg) 10%, transparent); color: var(--fg); border: none; padding: 0 16px; cursor: pointer; font-weight: bold; transition: background 0.2s; display: flex; align-items: center; gap: 6px; font-size: 12px; text-transform: uppercase; }
+.shadcn-copy-btn:hover { background: color-mix(in srgb, var(--fg) 20%, transparent); }
+.shadcn-copy-btn svg { width: 14px; height: 14px; }
+
+.del-btn { background: transparent; border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); color: var(--fg); cursor: pointer; padding: 8px 12px; font-size: 14px; font-weight: bold; flex: 0 0 auto; border-radius: var(--r-sm); }
+.del-btn:hover { background: #ff4444; color: var(--bg); border-color: #ff4444; }
+
+@media (max-width: 480px) {
+  .grid { grid-template-columns: repeat(3, var(--tile-size)) !important; }
+  .sidebar { border-left: none; }
+}
+</style>
+<!-- Google Fonts for Font Customization (Including Qwant's official: Open Sans) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Open+Sans:wght@400;700&family=Roboto:wght@400;700&family=Fira+Code&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<a href="https://github.com/Kamaldins" target="_blank" class="credits" id="credits">Made with &lt;3 by Kamaldins on GitHub</a>
+
+<!-- Custom Widget Container -->
+<div id="custom-widget-container"></div>
+
+<!-- Weather Widget -->
+<div class="weather-widget" id="weather-widget">
+  <div class="weather-header">
+    <span class="weather-loc" id="weather-loc">--</span>
+    <span class="weather-dots">⋮</span>
+  </div>
+  <div class="weather-main">
+    <img id="weather-icon" src="" alt="Weather">
+    <span id="weather-emoji" class="weather-emoji">☀️</span>
+    <div class="weather-temp" id="weather-temp">--°</div>
+  </div>
+  <div class="weather-highlow">
+    <span id="weather-high">↑--°</span> 
+    <span id="weather-low">↓--°</span>
+  </div>
+</div>
+
+<div class="content-wrapper">
+  <div class="clock" id="clock">--:--</div>
+
+  <!-- Center Taskbar Button -->
+  <div class="center-btn-wrap" id="center-btn-wrap">
+    <a href="#" class="center-btn" id="center-btn">
+      <span id="center-btn-text">Launch</span>
+    </a>
+  </div>
+
+  <div class="search-wrap">
+    <form id="search-form">
+      <input
+        type="text"
+        class="search-input"
+        id="search-input"
+        placeholder="Search or enter address"
+        autofocus
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </form>
+    <div class="engines" id="engines"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="hint">Press / to search · Tab to switch engine</div>
+
+<div class="floating-btn-group">
+  <!-- Mini GitHub Widget -->
+  <a href="https://github.com/Kamaldins" target="_blank" class="mini-widget-btn" title="My GitHub">
+    <img src="https://icons.duckduckgo.com/ip3/github.com.ico" alt="GitHub">
+  </a>
+  <!-- Settings Button -->
+  <button class="settings-btn" id="open-settings">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </button>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Side Menu -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-sticky-top">
+    <div class="sidebar-header">
+      <span>DesignT Settings</span>
+      <button class="close-btn" id="close-settings">&times;</button>
+    </div>
+
+    <div class="settings-search-wrap">
+      <input type="text" class="settings-search" id="settings-search" placeholder="Search settings...">
+    </div>
+    
+    <div class="tabs">
+      <button class="tab-btn active" data-target="tab-shortcuts">Shortcuts</button>
+      <button class="tab-btn" data-target="tab-appearance">Appearance</button>
+      <button class="tab-btn" data-target="tab-advanced">Advanced</button>
+      <button class="tab-btn" data-target="tab-custom">Custom</button>
+    </div>
+  </div>
+
+  <div class="sidebar-content">
+    <!-- Shortcuts Tab -->
+    <div class="tab-content active" id="tab-shortcuts">
+      <div id="settings-list" style="margin-bottom: 10px;"></div>
+      <button class="action-btn" id="add-shortcut">+ Add Shortcut</button>
+    </div>
+
+    <!-- Appearance Tab -->
+    <div class="tab-content" id="tab-appearance">
+      
+      <details class="accordion-item" open>
+        <summary class="accordion-summary">Time & Background</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label class="sub-label">Clock Font Size (px) <span class="default-val">Default: 14</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-clock-size-slider" min="10" max="48" step="1">
+              <input type="number" id="cfg-clock-size-num" class="set-input num-input">
+            </div>
+            
+            <label class="sub-label" style="margin-top: 10px;">Timezone (e.g. America/New_York)</label>
+            <input type="text" class="set-input" id="cfg-clock-tz" placeholder="Auto (System Time)">
+
+            <label class="sub-label" style="margin-top: 10px;">Background Image Upload</label>
+            <input type="file" class="set-input" id="cfg-bg-upload" accept="image/*">
+            <button class="action-btn secondary" id="cfg-bg-clear" style="margin-top: 8px;">Clear Background Image</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item" open>
+        <summary class="accordion-summary">Themes & Fonts</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <select class="set-input" id="cfg-theme-preset">
+              <option value="custom">Custom</option>
+              <option value="gruvbox">Gruvbox (Original)</option>
+              <option value="original">Original Dark</option>
+              <option value="nord">Nord (Blue/Snow)</option>
+              <option value="dracula">Dracula (Dark/Purple)</option>
+              <option value="mono">Monochrome (Black/White)</option>
+            </select>
+            <button class="action-btn secondary" id="save-custom-theme" style="margin-top: 0;">Save Current as Custom Theme</button>
+            
+            <label class="sub-label" style="margin-top: 10px;">Font Family</label>
+            <select class="set-input" id="cfg-font-family">
+              <option value="'Open Sans', sans-serif">Open Sans (Qwant Default)</option>
+              <option value="'Inter', sans-serif">Inter</option>
+              <option value="'Roboto', sans-serif">Roboto</option>
+              <option value="system-ui, sans-serif">System UI</option>
+              <option value="'Fira Code', monospace">Fira Code (Mono)</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
+        <summary class="accordion-summary">Colors & Gradients</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <div class="color-picker-wrap">
+              <div class="color-picker">
+                <input type="color" id="cfg-bg"> <span>BG</span>
+              </div>
+              <div class="color-picker">
+                <input type="color" id="cfg-fg"> <span>FG</span>
+              </div>
+            </div>
+            
+            <label class="checkbox-wrap" style="margin-top: 10px;">
+              <input type="checkbox" id="cfg-grad-toggle"> Enable Background Gradient
+            </label>
+            
+            <div id="gradient-controls" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <label class="sub-label">Gradient Type</label>
+              <select class="set-input" id="cfg-grad-type">
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
+                <option value="conic">Conic</option>
+              </select>
+              
+              <div class="color-picker-wrap">
+                <div class="color-picker">
+                  <input type="color" id="cfg-grad1"> <span>C1</span>
+                </div>
+                <div class="color-picker">
+                  <input type="color" id="cfg-grad2"> <span>C2</span>
+                </div>
+                <div class="color-picker">
+                  <input type="color" id="cfg-grad3"> <span>C3</span>
+                </div>
+              </div>
+              
+              <div>
+                <label class="sub-label">Gradient Angle (deg) <span class="default-val">Default: 45</span></label>
+                <div class="range-wrap">
+                  <input type="range" id="cfg-grad-angle-slider" min="0" max="360" step="5">
+                  <input type="number" id="cfg-grad-angle-num" class="set-input num-input">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
+        <summary class="accordion-summary">Weather Widget</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="cfg-weather-toggle"> Show Weather Widget
+            </label>
+            <div class="autocomplete-wrap" style="margin-top: 8px;">
+              <input type="text" class="set-input" id="cfg-weather-loc" placeholder="Search city (e.g. London)">
+              <div class="autocomplete-dropdown" id="weather-autocomplete"></div>
+            </div>
+            <span class="sub-label" style="margin-top: 4px;">Leave empty to use browser GPS location. Data by Open-Meteo.</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
+        <summary class="accordion-summary">Grid & Layout</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label class="sub-label">Grid Columns <span class="default-val">Default: 4</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-columns-slider" min="2" max="12" step="1">
+              <input type="number" id="cfg-columns-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Grid Gap / Distance (px) <span class="default-val">Default: 50</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-grid-gap-slider" min="0" max="200" step="5">
+              <input type="number" id="cfg-grid-gap-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Layout Position - X Axis (px) <span class="default-val">Default: 0</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-pos-x-slider" min="-400" max="400" step="10">
+              <input type="number" id="cfg-pos-x-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Layout Position - Y Axis (px) <span class="default-val">Default: 0</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-pos-y-slider" min="-400" max="400" step="10">
+              <input type="number" id="cfg-pos-y-num" class="set-input num-input">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
+        <summary class="accordion-summary">Misc & Toggles</summary>
+        <div class="accordion-content">
+          <div class="control-group" style="gap: 12px;">
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="cfg-engines"> Show Search Engine Buttons
+            </label>
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="cfg-credits"> Show Credits Link
+            </label>
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="cfg-center-btn-toggle"> Enable Center Button
+            </label>
+            <input type="text" class="set-input" id="cfg-center-btn-text" placeholder="Button Text (e.g. Launch)" style="margin-top: 8px;">
+            <input type="text" class="set-input" id="cfg-center-btn-url" placeholder="Button URL (https://...)" style="margin-top: 8px;">
+            <input type="text" class="set-input" id="cfg-center-btn-img" placeholder="Icon URL (Optional)" style="margin-top: 8px;">
+          </div>
+        </div>
+      </details>
+
+      <button class="action-btn" id="btn-revert" style="margin-top: 30px; border-color: #ff4444; color: #ff4444;">Revert to Original Config</button>
+    </div>
+
+    <!-- Advanced Tab -->
+    <div class="tab-content" id="tab-advanced">
+      
+      <details class="accordion-item" open>
+        <summary class="accordion-summary">Taskbar Customization</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label>Search Bar UI</label>
+            <input type="text" class="set-input" id="cfg-search-text" placeholder="Search bar placeholder text">
+            <div class="color-picker-wrap" style="margin-top: 8px;">
+              <div class="color-picker">
+                <input type="color" id="cfg-search-bg"> <span>BG</span>
+              </div>
+              <div class="color-picker">
+                <input type="color" id="cfg-search-text-color"> <span>Text</span>
+              </div>
+              <div class="color-picker">
+                <input type="color" id="cfg-search-border"> <span>Border</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
+        <summary class="accordion-summary">Dimensions & Animations</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="cfg-anim-toggle"> Enable Hover Animations
+            </label>
+            <div id="anim-controls" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <label class="sub-label">Animation Lift Height (px) <span class="default-val">Default: 4</span></label>
+              <div class="range-wrap">
+                <input type="range" id="cfg-anim-height-slider" min="0" max="20" step="1">
+                <input type="number" id="cfg-anim-height-num" class="set-input num-input">
+              </div>
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Sharpness / Border Radius (px) <span class="default-val">Default: 16</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-radius-slider" min="0" max="100" step="1">
+              <input type="number" id="cfg-radius-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Label Position</label>
+            <select class="set-input" id="cfg-label-pos">
+              <option value="column">Bottom (Default)</option>
+              <option value="column-reverse">Top</option>
+              <option value="hidden">Hidden</option>
+            </select>
+            
+            <label class="sub-label" style="margin-top: 10px;">Label Font Size (px) <span class="default-val">Default: 11</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-label-size-slider" min="8" max="20" step="1">
+              <input type="number" id="cfg-label-size-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Width - X Axis (px) <span class="default-val">Default: 560</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-search-width-slider" min="300" max="1200" step="10">
+              <input type="number" id="cfg-search-width-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Height / Thickness - Y Axis (px) <span class="default-val">Default: 16</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-search-y-slider" min="8" max="40" step="1">
+              <input type="number" id="cfg-search-y-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Depth / Elevation - Z Axis (px) <span class="default-val">Default: 15</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-search-z-slider" min="0" max="50" step="1">
+              <input type="number" id="cfg-search-z-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Tile Box Size (px) <span class="default-val">Default: 72</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-tile-size-slider" min="40" max="120" step="2">
+              <input type="number" id="cfg-tile-size-num" class="set-input num-input">
+            </div>
+
+            <label class="sub-label" style="margin-top: 10px;">Favicon / Icon Size (px) <span class="default-val">Default: 36</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-icon-size-slider" min="16" max="80" step="2">
+              <input type="number" id="cfg-icon-size-num" class="set-input num-input">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
+        <summary class="accordion-summary">Search Engines</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <div id="engines-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <button class="action-btn secondary" id="add-engine">+ Add Engine</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
+        <summary class="accordion-summary">Import / Export</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <div class="shadcn-input-group">
+              <textarea class="set-input" id="cfg-io-area" placeholder="Export your config to save it, or paste someone else's config here to import it."></textarea>
+              <button class="shadcn-copy-btn" id="btn-copy" title="Copy to clipboard">
+                <svg id="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span id="copy-text">Copy</span>
+              </button>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+              <button class="action-btn secondary" id="btn-export" style="margin-top: 0;">Export Config</button>
+              <button class="action-btn secondary" id="btn-import" style="margin-top: 0;">Import Config</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+    </div>
+
+    <!-- Custom Widget Tab -->
+    <div class="tab-content" id="tab-custom">
+      <div class="control-group">
+        <label>Custom Widget Coding</label>
+        <span class="sub-label">Write or paste raw HTML, CSS, and JS. The widget will render in the top left corner.</span>
+        <label class="checkbox-wrap" style="margin-top: 8px;">
+          <input type="checkbox" id="cfg-custom-widget-toggle"> Enable Custom Widget
+        </label>
+        <textarea class="set-input code-input" id="cfg-custom-widget-code" placeholder="<!-- Enter HTML/CSS/JS here --><div style='color: var(--fg); font-size: 24px;'>Hello DesignT!</div>"></textarea>
+        <button class="action-btn secondary" id="run-custom-widget" style="margin-top: 8px;">Run / Refresh Widget</button>
+      </div>
+    </div>
+
+    <button class="action-btn primary" id="save-settings">Save & Close</button>
+  </div>
+</div>
+
+<script>
+// --- Config & Data ---
+const defaultShortcuts = [
+  { name: 'GitHub', url: 'https://github.com', letter: 'GH', imgUrl: '' },
+  { name: 'Reddit', url: 'https://reddit.com', letter: 'R', imgUrl: '' },
+  { name: 'YouTube', url: 'https://youtube.com', letter: 'YT', imgUrl: '' },
+  { name: 'Twitch', url: 'https://twitch.tv', letter: 'T', imgUrl: '' }
+];
+
+const defaultEngines = [
+  { name: 'DDG', query: 'https://duckduckgo.com/?q=' },
+  { name: 'Google', query: 'https://www.google.com/search?q=' },
+  { name: 'GitHub', query: 'https://github.com/search?q=' },
+  { name: 'YT', query: 'https://www.youtube.com/results?search_query=' },
+  { name: 'Wiki', query: 'https://en.wikipedia.org/wiki/Special:Search?search=' }
+];
+
+const themes = {
+  gruvbox: { bg: '#282828', fg: '#ebdbb2' },
+  original: { bg: '#0e0e10', fg: '#e8e8ea' },
+  nord: { bg: '#2e3440', fg: '#eceff4' },
+  dracula: { bg: '#282a36', fg: '#f8f8f2' },
+  mono: { bg: '#000000', fg: '#ffffff' }
+};
+
+const defaultConfig = {
+  bg: '#282828', // Gruvbox Default
+  fg: '#ebdbb2', // Gruvbox Default
+  columns: 4,
+  searchWidth: 560,
+  searchY: 16,
+  searchZ: 15,
+  radius: 16,
+  gridGap: 50,
+  posX: 0,
+  posY: 0,
+  showEngines: true,
+  showCredits: true,
+  themePreset: 'gruvbox',
+  tileSize: 72,
+  iconSize: 36,
+  labelPos: 'column',
+  labelSize: 11,
+  showCenterBtn: false,
+  centerBtnText: 'Launch',
+  centerBtnUrl: 'https://github.com',
+  centerBtnImg: '',
+  fontFamily: "'Open Sans', sans-serif",
+  animations: true,
+  animHeight: 4,
+  useGradient: false,
+  bgGradType: 'linear',
+  bgGrad1: '#1a1a1a',
+  bgGrad2: '#2e2e2e',
+  bgGrad3: '#1a1a1a',
+  bgGradAngle: 45,
+  bgImage: '',
+  engines: defaultEngines,
+  searchText: 'Search or enter address',
+  searchBg: '',
+  searchTextColor: '',
+  searchBorder: '',
+  showWeather: false,
+  weatherLoc: '',
+  weatherLat: '',
+  weatherLon: '',
+  clockSize: 14,
+  clockTz: '',
+  useCustomWidget: false,
+  customWidgetCode: '<div style="color: var(--fg); font-size: 24px; font-weight: bold;">DesignT</div>'
+};
+
+// State
+let shortcuts = JSON.parse(localStorage.getItem('start-shortcuts')) || [...defaultShortcuts];
+let config = { ...defaultConfig, ...(JSON.parse(localStorage.getItem('start-config')) || {}) };
+let customThemes = JSON.parse(localStorage.getItem('start-custom-themes')) || {};
+let currentEngineIdx = 0;
+
+// DOM Elements
+const enginesDiv = document.getElementById('engines');
+const searchForm = document.getElementById('search-form');
+const searchInput = document.getElementById('search-input');
+const grid = document.getElementById('grid');
+const creditsEl = document.getElementById('credits');
+const rootStyle = document.documentElement.style;
+const body = document.body;
+const weatherWidget = document.getElementById('weather-widget');
+const customWidgetContainer = document.getElementById('custom-widget-container');
+
+const centerBtnWrap = document.getElementById('center-btn-wrap');
+const centerBtn = document.getElementById('center-btn');
+const centerBtnText = document.getElementById('center-btn-text');
+
+// --- Initialization ---
+function init() {
+  applyConfig();
+  renderGrid();
+  renderEngines();
+  renderCustomWidget();
+  updateClock();
+  setInterval(updateClock, 1000);
+  bindControls();
+  if (config.showWeather) fetchWeather();
+}
+
+// --- Layout & Rendering ---
+function applyConfig() {
+  rootStyle.setProperty('--bg', config.bg);
+  rootStyle.setProperty('--fg', config.fg);
+  rootStyle.setProperty('--columns', config.columns);
+  rootStyle.setProperty('--search-width', config.searchWidth + 'px');
+  rootStyle.setProperty('--search-y', config.searchY + 'px');
+  rootStyle.setProperty('--search-z', config.searchZ + 'px');
+  rootStyle.setProperty('--pos-x', config.posX + 'px');
+  rootStyle.setProperty('--pos-y', config.posY + 'px');
+  rootStyle.setProperty('--radius', config.radius + 'px');
+  rootStyle.setProperty('--grid-gap', config.gridGap + 'px');
+  rootStyle.setProperty('--tile-size', config.tileSize + 'px');
+  rootStyle.setProperty('--icon-size', config.iconSize + 'px');
+  rootStyle.setProperty('--label-size', config.labelSize + 'px');
+  rootStyle.setProperty('--label-flex', config.labelPos);
+  rootStyle.setProperty('--font-family', config.fontFamily);
+  rootStyle.setProperty('--anim-height', config.animHeight + 'px');
+  rootStyle.setProperty('--clock-size', config.clockSize + 'px');
+  
+  // Search Bar Customization
+  searchInput.placeholder = config.searchText || 'Search or enter address';
+  rootStyle.setProperty('--search-bg', config.searchBg || `color-mix(in srgb, ${config.fg} 5%, ${config.bg})`);
+  rootStyle.setProperty('--search-text', config.searchTextColor || config.fg);
+  rootStyle.setProperty('--search-border', config.searchBorder || `color-mix(in srgb, ${config.fg} 20%, transparent)`);
+
+  // Background Customization
+  rootStyle.setProperty('--bg-image', config.bgImage ? `url(${config.bgImage})` : 'none');
+
+  // Gradient Customization
+  let gradVal = 'none';
+  if (config.useGradient) {
+    if (config.bgGradType === 'conic') {
+      gradVal = `conic-gradient(from ${config.bgGradAngle}deg, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
+    } else if (config.bgGradType === 'radial') {
+      gradVal = `radial-gradient(circle, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
+    } else {
+      gradVal = `linear-gradient(${config.bgGradAngle}deg, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
+    }
+  }
+  rootStyle.setProperty('--bg-grad', gradVal);
+  
+  body.classList.toggle('no-anim', !config.animations);
+  
+  creditsEl.style.display = config.showCredits ? 'block' : 'none';
+  enginesDiv.style.display = config.showEngines ? 'flex' : 'none';
+
+  centerBtnWrap.classList.toggle('active', config.showCenterBtn);
+  centerBtnText.innerText = config.centerBtnText || 'Launch';
+  centerBtn.href = config.centerBtnUrl || '#';
+  
+  const oldImg = centerBtn.querySelector('img');
+  if (oldImg) oldImg.remove();
+  if (config.centerBtnImg) {
+    const img = document.createElement('img');
+    img.src = config.centerBtnImg;
+    centerBtn.insertBefore(img, centerBtnText);
+  }
+
+  // Weather & Custom Widget Config
+  weatherWidget.classList.toggle('active', config.showWeather);
+  customWidgetContainer.classList.toggle('active', config.useCustomWidget);
+}
+
+function getFaviconUrl(url) {
+  if (!url) return '';
+  try {
+    const domain = new URL(url).hostname;
+    return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+  } catch (e) {
+    return '';
+  }
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  // Filter out completely empty shortcuts to prevent broken UI
+  const validShortcuts = shortcuts.filter(s => s.name.trim() !== '' || s.url.trim() !== '');
+  
+  validShortcuts.forEach((s, index) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'tile-wrap';
+    
+    const a = document.createElement('a');
+    a.className = 'tile';
+    a.href = s.url;
+
+    const box = document.createElement('div');
+    box.className = 'tile-box';
+    
+    const fallback = document.createElement('div');
+    fallback.className = 'tile-fallback';
+    fallback.innerText = s.letter || (s.name ? s.name.charAt(0).toUpperCase() : '?');
+
+    const faviconUrl = s.imgUrl || getFaviconUrl(s.url);
+    
+    if (faviconUrl) {
+      const img = document.createElement('img');
+      img.className = 'tile-img';
+      img.src = faviconUrl;
+      img.alt = s.name;
+      img.onerror = () => {
+        img.style.display = 'none';
+        fallback.style.display = 'flex';
+      };
+      box.appendChild(img);
+      fallback.style.display = 'none';
+    }
+    
+    box.appendChild(fallback);
+
+    const label = document.createElement('div');
+    label.className = 'tile-label';
+    label.innerText = s.name;
+    if (config.labelPos === 'hidden') label.style.display = 'none';
+
+    a.appendChild(box);
+    a.appendChild(label);
+
+    const burger = document.createElement('button');
+    burger.className = 'tile-burger';
+    burger.innerHTML = '⋮';
+    burger.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      closeAllDrops();
+      drop.classList.add('active');
+    };
+
+    const drop = document.createElement('div');
+    drop.className = 'tile-drop';
+    drop.innerHTML = `
+      <button onclick="quickEdit(event, ${index})">Edit</button>
+      <button class="danger" onclick="quickDelete(event, ${index})">Delete</button>
+    `;
+
+    wrap.appendChild(a);
+    wrap.appendChild(burger);
+    wrap.appendChild(drop);
+    grid.appendChild(wrap);
+  });
+
+  // Add Placeholders if needed
+  const placeholdersNeeded = Math.max(0, config.columns - validShortcuts.length);
+  const totalPlaceholders = validShortcuts.length === 0 ? config.columns : placeholdersNeeded;
+  
+  for (let i = 0; i < totalPlaceholders; i++) {
+    const pWrap = document.createElement('div');
+    pWrap.className = 'placeholder-wrap';
+    pWrap.innerHTML = `
+      <div class="placeholder-box">+</div>
+      <div class="tile-label">Add</div>
+    `;
+    pWrap.onclick = () => {
+      openSidebar();
+      document.querySelector('[data-target="tab-shortcuts"]').click();
+      setTimeout(() => {
+        document.getElementById('add-shortcut').click();
+      }, 300);
+    };
+    grid.appendChild(pWrap);
+  }
+}
+
+function renderEngines() {
+  enginesDiv.innerHTML = '';
+  config.engines.forEach((eng, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.innerText = eng.name;
+    if (i === currentEngineIdx) btn.classList.add('active');
+    btn.onclick = () => {
+      currentEngineIdx = i;
+      document.querySelectorAll('.engines button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      searchInput.focus();
+    };
+    enginesDiv.appendChild(btn);
+  });
+}
+
+function renderCustomWidget() {
+  if (!config.useCustomWidget) {
+    customWidgetContainer.innerHTML = '';
+    return;
+  }
+  
+  customWidgetContainer.innerHTML = config.customWidgetCode || '';
+  
+  // Manually execute scripts injected via innerHTML
+  const scripts = customWidgetContainer.querySelectorAll('script');
+  scripts.forEach(oldScript => {
+    const newScript = document.createElement('script');
+    for (let i = 0; i < oldScript.attributes.length; i++) {
+      newScript.setAttribute(oldScript.attributes[i].name, oldScript.attributes[i].value);
+    }
+    newScript.textContent = oldScript.textContent;
+    oldScript.parentNode.replaceChild(newScript, oldScript);
+  });
+}
+
+function closeAllDrops() {
+  document.querySelectorAll('.tile-drop.active').forEach(d => d.classList.remove('active'));
+}
+
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.tile-burger') && !e.target.closest('.tile-drop')) closeAllDrops();
+  if(!e.target.closest('.autocomplete-wrap')) document.getElementById('weather-autocomplete').style.display = 'none';
+});
+
+function updateClock() {
+  const now = new Date();
+  const options = { hour: '2-digit', minute: '2-digit', hour12: false };
+  if (config.clockTz && config.clockTz.trim() !== '') {
+    options.timeZone = config.clockTz;
+  }
+  const timeStr = new Intl.DateTimeFormat('en-US', options).format(now);
+  document.getElementById('clock').textContent = timeStr;
+}
+
+// --- Weather Logic (Real Source: Open-Meteo) ---
+async function fetchWeather() {
+  let lat, lon, locName = config.weatherLoc || "Local";
+  const locEl = document.getElementById('weather-loc');
+  const tempEl = document.getElementById('weather-temp');
+  const highEl = document.getElementById('weather-high');
+  const lowEl = document.getElementById('weather-low');
+  const imgEl = document.getElementById('weather-icon');
+  const emojiEl = document.getElementById('weather-emoji');
+
+  // Set fallback immediately
+  locEl.innerText = "Loading...";
+  tempEl.innerText = "--°";
+  highEl.innerText = "↑--°";
+  lowEl.innerText = "↓--°";
+
+  try {
+    if (config.weatherLat && config.weatherLon) {
+      lat = config.weatherLat;
+      lon = config.weatherLon;
+    } else if (config.weatherLoc && config.weatherLoc.trim() !== '') {
+      // Fallback geocoding if coords aren't saved but name is
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(config.weatherLoc)}&count=1`);
+      const geoData = await geoRes.json();
+      if (geoData.results && geoData.results[0]) {
+        lat = geoData.results[0].latitude;
+        lon = geoData.results[0].longitude;
+        locName = geoData.results[0].name;
+      } else {
+        throw new Error("Location not found");
+      }
+    } else {
+      // Browser Geolocation
+      if (!navigator.geolocation) throw new Error("No GPS");
+      const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject));
+      lat = pos.coords.latitude;
+      lon = pos.coords.longitude;
+      
+      // Reverse Geocode for City Name
+      try {
+        const revGeoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+        const revGeoData = await revGeoRes.json();
+        locName = revGeoData.city || revGeoData.locality || revGeoData.principalSubdivision || "Local";
+      } catch (e) {
+        locName = "Local";
+      }
+    }
+
+    // Fetch Weather Data
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&timezone=auto`);
+    const data = await res.json();
+    
+    if (data.current_weather) {
+      const temp = Math.round(data.current_weather.temperature);
+      const code = data.current_weather.weathercode;
+      const isDay = data.current_weather.is_day;
+      const high = Math.round(data.daily.temperature_2m_max[0]);
+      const low = Math.round(data.daily.temperature_2m_min[0]);
+
+      tempEl.innerText = `${temp}°`;
+      locEl.innerText = locName;
+      highEl.innerText = `↑${high}°`;
+      lowEl.innerText = `↓${low}°`;
+
+      const iconUrl = mapWeatherIcon(code, isDay);
+      imgEl.src = iconUrl;
+      imgEl.style.display = 'block';
+      emojiEl.style.display = 'none';
+      
+      imgEl.onerror = () => {
+        imgEl.style.display = 'none';
+        emojiEl.style.display = 'block';
+        emojiEl.innerText = mapWeatherEmoji(code);
+      };
+    }
+  } catch (error) {
+    console.error("Weather fetch failed:", error);
+    locEl.innerText = "Set Loc in Settings";
+    tempEl.innerText = "--";
+    highEl.innerText = "↑--";
+    lowEl.innerText = "↓--";
+    imgEl.style.display = 'none';
+    emojiEl.style.display = 'block';
+    emojiEl.innerText = '⚠️';
+  }
+}
+
+function mapWeatherEmoji(code) {
+  if (code === 0) return '☀️';
+  if (code <= 2) return '🌤️';
+  if (code === 3) return '☁️';
+  if (code <= 48) return '🌫️';
+  if (code <= 57) return '🌦️';
+  if (code <= 67) return '🌧️';
+  if (code <= 77) return '❄️';
+  if (code <= 82) return '🌦️';
+  if (code <= 86) return '🌨️';
+  if (code >= 95) return '⛈️';
+  return '🌡️';
+}
+
+function mapWeatherIcon(code, isDay) {
+  let iconBase = isDay ? 'clear-day' : 'clear-night';
+  if (code === 0) iconBase = isDay ? 'clear-day' : 'clear-night';
+  else if (code <= 2) iconBase = isDay ? 'partly-cloudy-day' : 'partly-cloudy-night';
+  else if (code === 3) iconBase = 'overcast-day';
+  else if (code <= 48) iconBase = 'fog-day';
+  else if (code <= 57) iconBase = 'partly-cloudy-day-drizzle';
+  else if (code <= 67) iconBase = 'rain';
+  else if (code <= 77) iconBase = 'snow';
+  else if (code <= 82) iconBase = 'partly-cloudy-day-rain';
+  else if (code <= 86) iconBase = 'partly-cloudy-day-snow';
+  else if (code >= 95) iconBase = 'thunderstorms-day';
+  
+  // Using jsDelivr CDN for perfectly reliable GitHub raw content loading
+  return `https://cdn.jsdelivr.net/gh/basmilius/weather-icons@dev/production/fill/all/${iconBase}.svg`;
+}
+
+// --- Quick Actions from Grid ---
+window.quickEdit = function(e, index) {
+  e.preventDefault(); e.stopPropagation();
+  closeAllDrops();
+  openSidebar();
+  document.querySelector('[data-target="tab-shortcuts"]').click();
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('#settings-list .set-name');
+    if(inputs[index]) {
+      const row = inputs[index].closest('.shortcut-item');
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.classList.add('highlight');
+      inputs[index].focus();
+      setTimeout(() => row.classList.remove('highlight'), 1500);
+    }
+  }, 150);
+}
+
+window.quickDelete = function(e, index) {
+  e.preventDefault(); e.stopPropagation();
+  closeAllDrops();
+  shortcuts.splice(index, 1);
+  saveData(); renderGrid(); renderSettingsList();
+}
+
+// --- Search Engine Logic ---
+searchForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const val = searchInput.value.trim();
+  if (!val) return;
+  if (/^https?:\/\//i.test(val) || /^[\w-]+\.\w+/i.test(val) && !val.includes(' ')) {
+    window.location.href = /^https?:\/\//i.test(val) ? val : 'https://' + val;
+  } else {
+    window.location.href = config.engines[currentEngineIdx].query + encodeURIComponent(val);
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab' && document.activeElement === searchInput && config.showEngines) {
+    e.preventDefault();
+    currentEngineIdx = (currentEngineIdx + 1) % config.engines.length;
+    renderEngines();
+    searchInput.focus();
+  }
+  if (e.key === '/' && document.activeElement !== searchInput && !document.getElementById('sidebar').classList.contains('active')) {
+    e.preventDefault(); searchInput.focus();
+  }
+});
+
+// --- Settings UI / Sidebar ---
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebar-overlay');
+
+function openSidebar() {
+  sidebar.classList.add('active');
+  overlay.classList.add('active');
+  populateSettings();
+}
+
+function closeSidebar() {
+  // Clean up empty shortcuts before closing
+  shortcuts = shortcuts.filter(s => s.name.trim() !== '' || s.url.trim() !== '');
+  renderSettingsList();
+  sidebar.classList.remove('active');
+  overlay.classList.remove('active');
+  renderGrid();
+  searchInput.focus();
+}
+
+document.getElementById('open-settings').addEventListener('click', openSidebar);
+document.getElementById('close-settings').addEventListener('click', closeSidebar);
+overlay.addEventListener('click', closeSidebar);
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.target).classList.add('active');
+    // Reset scroll to top when switching tabs
+    sidebar.scrollTop = 0;
+  });
+});
+
+// Settings Search Logic
+document.getElementById('settings-search').addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase();
+  const accordions = document.querySelectorAll('.accordion-item');
+  
+  if (query === '') {
+    accordions.forEach(acc => {
+      acc.style.display = '';
+      // Restore default open state
+      if (acc.querySelector('summary').textContent.includes('Time') || acc.querySelector('summary').textContent.includes('Themes') || acc.querySelector('summary').textContent.includes('Taskbar')) {
+        acc.open = true;
+      } else {
+        acc.open = false;
+      }
+    });
+    return;
+  }
+
+  accordions.forEach(acc => {
+    const text = acc.textContent.toLowerCase();
+    if (text.includes(query)) {
+      acc.style.display = '';
+      acc.open = true;
+    } else {
+      acc.style.display = 'none';
+    }
+  });
+});
+
+// Dynamic Sync Setup for Number & Slider Pairs
+function bindSync(key, cssVar, suffix = '') {
+  const slider = document.getElementById(`cfg-${key}-slider`);
+  const num = document.getElementById(`cfg-${key}-num`);
+  if(!slider || !num) return;
+  
+  const configKeyMap = {
+    'search-width': 'searchWidth', 'search-y': 'searchY', 'search-z': 'searchZ',
+    'pos-x': 'posX', 'pos-y': 'posY', 'grid-gap': 'gridGap', 'columns': 'columns',
+    'radius': 'radius', 'tile-size': 'tileSize', 'icon-size': 'iconSize',
+    'label-size': 'labelSize', 'anim-height': 'animHeight', 'grad-angle': 'bgGradAngle',
+    'clock-size': 'clockSize'
+  };
+  const configKey = configKeyMap[key];
+  
+  const update = (val) => {
+    val = Number(val);
+    slider.value = val;
+    num.value = val;
+    if(cssVar) rootStyle.setProperty(`--${cssVar}`, val + suffix);
+    config[configKey] = val;
+    saveData();
+    if(key === 'grad-angle' && config.useGradient) applyConfig();
+  };
+  
+  slider.addEventListener('input', (e) => update(e.target.value));
+  num.addEventListener('input', (e) => update(e.target.value));
+}
+
+// Weather Autocomplete Logic
+let autocompleteTimeout;
+document.getElementById('cfg-weather-loc').addEventListener('input', (e) => {
+  clearTimeout(autocompleteTimeout);
+  const query = e.target.value;
+  const dropdown = document.getElementById('weather-autocomplete');
+  
+  if (query.length < 3) {
+    dropdown.style.display = 'none';
+    return;
+  }
+  
+  autocompleteTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`);
+      const data = await res.json();
+      
+      dropdown.innerHTML = '';
+      if (data.results) {
+        dropdown.style.display = 'block';
+        data.results.forEach(loc => {
+          const item = document.createElement('div');
+          item.className = 'autocomplete-item';
+          item.innerText = `${loc.name}, ${loc.country}`;
+          item.onclick = () => {
+            document.getElementById('cfg-weather-loc').value = loc.name;
+            config.weatherLoc = loc.name;
+            config.weatherLat = loc.latitude;
+            config.weatherLon = loc.longitude;
+            dropdown.style.display = 'none';
+            saveData();
+            fetchWeather();
+          };
+          dropdown.appendChild(item);
+        });
+      } else {
+        dropdown.style.display = 'none';
+      }
+    } catch (err) {
+      console.error("Autocomplete failed", err);
+    }
+  }, 300);
+});
+
+function bindControls() {
+  bindSync('search-width', 'search-width', 'px');
+  bindSync('search-y', 'search-y', 'px');
+  bindSync('search-z', 'search-z', 'px');
+  bindSync('pos-x', 'pos-x', 'px');
+  bindSync('pos-y', 'pos-y', 'px');
+  bindSync('columns', 'columns', '');
+  bindSync('radius', 'radius', 'px');
+  bindSync('grid-gap', 'grid-gap', 'px');
+  bindSync('tile-size', 'tile-size', 'px');
+  bindSync('icon-size', 'icon-size', 'px');
+  bindSync('label-size', 'label-size', 'px');
+  bindSync('anim-height', 'anim-height', 'px');
+  bindSync('grad-angle', null, '');
+  bindSync('clock-size', 'clock-size', 'px');
+
+  // Clock Timezone
+  document.getElementById('cfg-clock-tz').addEventListener('input', (e) => {
+    config.clockTz = e.target.value;
+    saveData();
+    updateClock();
+  });
+
+  // Background Image Upload
+  document.getElementById('cfg-bg-upload').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        config.bgImage = ev.target.result;
+        applyConfig();
+        saveData();
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+  document.getElementById('cfg-bg-clear').addEventListener('click', () => {
+    config.bgImage = '';
+    document.getElementById('cfg-bg-upload').value = '';
+    applyConfig();
+    saveData();
+  });
+
+  document.getElementById('cfg-engines').addEventListener('change', (e) => {
+    config.showEngines = e.target.checked;
+    enginesDiv.style.display = config.showEngines ? 'flex' : 'none';
+    saveData();
+  });
+  document.getElementById('cfg-credits').addEventListener('change', (e) => {
+    config.showCredits = e.target.checked;
+    creditsEl.style.display = config.showCredits ? 'block' : 'none';
+    saveData();
+  });
+
+  // Label Pos
+  document.getElementById('cfg-label-pos').addEventListener('change', (e) => {
+    config.labelPos = e.target.value;
+    rootStyle.setProperty('--label-flex', e.target.value);
+    saveData();
+    renderGrid();
+  });
+
+  // Font Family
+  document.getElementById('cfg-font-family').addEventListener('change', (e) => {
+    config.fontFamily = e.target.value;
+    rootStyle.setProperty('--font-family', e.target.value);
+    saveData();
+  });
+
+  // Animations Toggle
+  document.getElementById('cfg-anim-toggle').addEventListener('change', (e) => {
+    config.animations = e.target.checked;
+    body.classList.toggle('no-anim', !config.animations);
+    document.getElementById('anim-controls').style.display = config.animations ? 'flex' : 'none';
+    saveData();
+  });
+
+  // Gradient Toggle
+  document.getElementById('cfg-grad-toggle').addEventListener('change', (e) => {
+    config.useGradient = e.target.checked;
+    document.getElementById('gradient-controls').style.display = config.useGradient ? 'flex' : 'none';
+    applyConfig();
+    saveData();
+  });
+
+  // Gradient Type
+  document.getElementById('cfg-grad-type').addEventListener('change', (e) => {
+    config.bgGradType = e.target.value;
+    applyConfig();
+    saveData();
+  });
+
+  // Gradient Colors
+  ['cfg-grad1', 'cfg-grad2', 'cfg-grad3'].forEach(id => {
+    document.getElementById(id).addEventListener('input', (e) => {
+      if(id === 'cfg-grad1') config.bgGrad1 = e.target.value;
+      if(id === 'cfg-grad2') config.bgGrad2 = e.target.value;
+      if(id === 'cfg-grad3') config.bgGrad3 = e.target.value;
+      applyConfig();
+      saveData();
+    });
+  });
+
+  // Center Button Controls
+  document.getElementById('cfg-center-btn-toggle').addEventListener('change', (e) => {
+    config.showCenterBtn = e.target.checked;
+    centerBtnWrap.classList.toggle('active', config.showCenterBtn);
+    saveData();
+  });
+  document.getElementById('cfg-center-btn-text').addEventListener('input', (e) => {
+    config.centerBtnText = e.target.value;
+    centerBtnText.innerText = e.target.value;
+    saveData();
+  });
+  document.getElementById('cfg-center-btn-url').addEventListener('input', (e) => {
+    config.centerBtnUrl = e.target.value;
+    centerBtn.href = e.target.value;
+    saveData();
+  });
+  document.getElementById('cfg-center-btn-img').addEventListener('input', (e) => {
+    config.centerBtnImg = e.target.value;
+    const oldImg = centerBtn.querySelector('img');
+    if (oldImg) oldImg.remove();
+    if (config.centerBtnImg) {
+      const img = document.createElement('img');
+      img.src = config.centerBtnImg;
+      centerBtn.insertBefore(img, centerBtnText);
+    }
+    saveData();
+  });
+
+  // Weather Controls
+  document.getElementById('cfg-weather-toggle').addEventListener('change', (e) => {
+    config.showWeather = e.target.checked;
+    applyConfig();
+    if(config.showWeather) fetchWeather();
+    saveData();
+  });
+
+  // Search Bar Customization
+  document.getElementById('cfg-search-text').addEventListener('input', (e) => {
+    config.searchText = e.target.value;
+    searchInput.placeholder = e.target.value;
+    saveData();
+  });
+  document.getElementById('cfg-search-bg').addEventListener('input', (e) => {
+    config.searchBg = e.target.value;
+    rootStyle.setProperty('--search-bg', e.target.value);
+    saveData();
+  });
+  document.getElementById('cfg-search-text-color').addEventListener('input', (e) => {
+    config.searchTextColor = e.target.value;
+    rootStyle.setProperty('--search-text', e.target.value);
+    saveData();
+  });
+  document.getElementById('cfg-search-border').addEventListener('input', (e) => {
+    config.searchBorder = e.target.value;
+    rootStyle.setProperty('--search-border', e.target.value);
+    saveData();
+  });
+
+  // Custom Widget Controls
+  document.getElementById('cfg-custom-widget-toggle').addEventListener('change', (e) => {
+    config.useCustomWidget = e.target.checked;
+    applyConfig();
+    renderCustomWidget();
+    saveData();
+  });
+  document.getElementById('cfg-custom-widget-code').addEventListener('input', (e) => {
+    config.customWidgetCode = e.target.value;
+    saveData();
+  });
+  document.getElementById('run-custom-widget').addEventListener('click', () => {
+    renderCustomWidget();
+  });
+
+  // Save Custom Theme
+  document.getElementById('save-custom-theme').addEventListener('click', () => {
+    const name = prompt("Enter a name for your custom theme:");
+    if(name) {
+      customThemes[name] = { bg: config.bg, fg: config.fg };
+      localStorage.setItem('start-custom-themes', JSON.stringify(customThemes));
+      populateThemes();
+      config.themePreset = name;
+      document.getElementById('cfg-theme-preset').value = name;
+      saveData();
+    }
+  });
+
+  // Import/Export/Copy
+  document.getElementById('btn-export').addEventListener('click', () => {
+    document.getElementById('cfg-io-area').value = JSON.stringify({ config, shortcuts });
+  });
+  document.getElementById('btn-copy').addEventListener('click', () => {
+    const text = document.getElementById('cfg-io-area').value;
+    navigator.clipboard.writeText(text).then(() => {
+      document.getElementById('copy-text').innerText = 'Copied';
+      document.getElementById('copy-icon').innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+      setTimeout(() => {
+        document.getElementById('copy-text').innerText = 'Copy';
+        document.getElementById('copy-icon').innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>';
+      }, 2000);
+    });
+  });
+  document.getElementById('btn-import').addEventListener('click', () => {
+    try {
+      const data = JSON.parse(document.getElementById('cfg-io-area').value);
+      if(data.config) config = data.config;
+      if(data.shortcuts) shortcuts = data.shortcuts;
+      saveData();
+      location.reload();
+    } catch (e) {
+      alert("Invalid JSON data!");
+    }
+  });
+
+  document.getElementById('add-engine').addEventListener('click', () => {
+    config.engines.push({ name: 'New', query: 'https://example.com/?q=' });
+    saveData();
+    renderEnginesList();
+    renderEngines();
+  });
+}
+
+// Populate Settings Form
+function populateSettings() {
+  renderSettingsList();
+  renderEnginesList();
+  populateThemes();
+  
+  document.getElementById('cfg-bg').value = config.bg;
+  document.getElementById('cfg-fg').value = config.fg;
+  document.getElementById('cfg-font-family').value = config.fontFamily;
+  document.getElementById('cfg-clock-tz').value = config.clockTz || '';
+
+  const setSync = (key, val) => {
+    document.getElementById(`cfg-${key}-slider`).value = val;
+    document.getElementById(`cfg-${key}-num`).value = val;
+  };
+  
+  setSync('search-width', config.searchWidth);
+  setSync('search-y', config.searchY);
+  setSync('search-z', config.searchZ);
+  setSync('pos-x', config.posX);
+  setSync('pos-y', config.posY);
+  setSync('columns', config.columns);
+  setSync('radius', config.radius);
+  setSync('grid-gap', config.gridGap);
+  setSync('tile-size', config.tileSize);
+  setSync('icon-size', config.iconSize);
+  setSync('label-size', config.labelSize);
+  setSync('anim-height', config.animHeight);
+  setSync('grad-angle', config.bgGradAngle);
+  setSync('clock-size', config.clockSize);
+
+  document.getElementById('cfg-engines').checked = config.showEngines;
+  document.getElementById('cfg-credits').checked = config.showCredits;
+  document.getElementById('cfg-label-pos').value = config.labelPos;
+  
+  document.getElementById('cfg-anim-toggle').checked = config.animations;
+  document.getElementById('anim-controls').style.display = config.animations ? 'flex' : 'none';
+
+  document.getElementById('cfg-grad-toggle').checked = config.useGradient;
+  document.getElementById('gradient-controls').style.display = config.useGradient ? 'flex' : 'none';
+  document.getElementById('cfg-grad-type').value = config.bgGradType;
+  document.getElementById('cfg-grad1').value = config.bgGrad1;
+  document.getElementById('cfg-grad2').value = config.bgGrad2;
+  document.getElementById('cfg-grad3').value = config.bgGrad3;
+
+  document.getElementById('cfg-center-btn-toggle').checked = config.showCenterBtn;
+  document.getElementById('cfg-center-btn-text').value = config.centerBtnText || '';
+  document.getElementById('cfg-center-btn-url').value = config.centerBtnUrl || '';
+  document.getElementById('cfg-center-btn-img').value = config.centerBtnImg || '';
+
+  document.getElementById('cfg-weather-toggle').checked = config.showWeather;
+  document.getElementById('cfg-weather-loc').value = config.weatherLoc || '';
+
+  document.getElementById('cfg-search-text').value = config.searchText || '';
+  document.getElementById('cfg-search-bg').value = config.searchBg || '#282828';
+  document.getElementById('cfg-search-text-color').value = config.searchTextColor || '#ebdbb2';
+  document.getElementById('cfg-search-border').value = config.searchBorder || '#3c3836';
+
+  document.getElementById('cfg-custom-widget-toggle').checked = config.useCustomWidget;
+  document.getElementById('cfg-custom-widget-code').value = config.customWidgetCode || '';
+}
+
+function populateThemes() {
+  const themeSelect = document.getElementById('cfg-theme-preset');
+  themeSelect.innerHTML = '<option value="custom">Custom</option>';
+  for(const key in themes) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.innerText = key.charAt(0).toUpperCase() + key.slice(1);
+    themeSelect.appendChild(opt);
+  }
+  for(const key in customThemes) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.innerText = `${key} (Custom)`;
+    themeSelect.appendChild(opt);
+  }
+  themeSelect.value = config.themePreset || 'gruvbox';
+}
+
+// Color Pickers logic
+const themeSelect = document.getElementById('cfg-theme-preset');
+const bgPicker = document.getElementById('cfg-bg');
+const fgPicker = document.getElementById('cfg-fg');
+
+themeSelect.addEventListener('change', (e) => {
+  const val = e.target.value;
+  config.themePreset = val;
+  const themeSource = themes[val] || customThemes[val];
+  if(themeSource) {
+    config.bg = themeSource.bg;
+    config.fg = themeSource.fg;
+    bgPicker.value = config.bg;
+    fgPicker.value = config.fg;
+    rootStyle.setProperty('--bg', config.bg);
+    rootStyle.setProperty('--fg', config.fg);
+  }
+  saveData();
+});
+
+const onColorChange = () => {
+  themeSelect.value = 'custom';
+  config.themePreset = 'custom';
+  config.bg = bgPicker.value;
+  config.fg = fgPicker.value;
+  rootStyle.setProperty('--bg', config.bg);
+  rootStyle.setProperty('--fg', config.fg);
+  saveData();
+};
+bgPicker.addEventListener('input', onColorChange);
+fgPicker.addEventListener('input', onColorChange);
+
+function renderSettingsList() {
+  const list = document.getElementById('settings-list');
+  list.innerHTML = '';
+  shortcuts.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'shortcut-item';
+    item.dataset.idx = i;
+    item.innerHTML = `
+      <div class="settings-row">
+        <input type="text" class="set-input set-letter" value="${s.letter || ''}" placeholder="LTR" data-key="letter" maxlength="3">
+        <input type="text" class="set-input set-name" value="${s.name || ''}" placeholder="Name" data-key="name">
+        <button class="del-btn">×</button>
+      </div>
+      <div class="settings-row">
+        <input type="text" class="set-input set-url" value="${s.url || ''}" placeholder="URL (https://...)" data-key="url">
+      </div>
+      <div class="settings-row">
+        <input type="text" class="set-input set-img" value="${s.imgUrl || ''}" placeholder="Icon URL (auto-fetch if empty)" data-key="imgUrl">
+      </div>
+    `;
+    list.appendChild(item);
+  });
+
+  list.querySelectorAll('.set-input').forEach(inp => {
+    inp.addEventListener('input', (e) => {
+      const item = e.target.closest('.shortcut-item');
+      const idx = item.dataset.idx;
+      const key = e.target.dataset.key;
+      shortcuts[idx][key] = e.target.value;
+      saveData();
+    });
+  });
+
+  list.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const item = e.target.closest('.shortcut-item');
+      const idx = item.dataset.idx;
+      shortcuts.splice(idx, 1);
+      saveData();
+      renderSettingsList();
+    });
+  });
+}
+
+function renderEnginesList() {
+  const list = document.getElementById('engines-list');
+  list.innerHTML = '';
+  config.engines.forEach((eng, i) => {
+    const item = document.createElement('div');
+    item.className = 'engine-item';
+    item.dataset.idx = i;
+    item.innerHTML = `
+      <div class="settings-row">
+        <input type="text" class="set-input set-name" value="${eng.name || ''}" placeholder="Name" data-key="name" style="flex: 0 0 30%;">
+        <input type="text" class="set-input set-url" value="${eng.query || ''}" placeholder="Query URL (e.g. https://google.com/search?q=)" data-key="query">
+        <button class="del-btn">×</button>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+
+  list.querySelectorAll('.engine-item .set-input').forEach(inp => {
+    inp.addEventListener('input', (e) => {
+      const item = e.target.closest('.engine-item');
+      const idx = item.dataset.idx;
+      const key = e.target.dataset.key;
+      config.engines[idx][key] = e.target.value;
+      saveData();
+      renderEngines();
+    });
+  });
+
+  list.querySelectorAll('.engine-item .del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const item = e.target.closest('.engine-item');
+      const idx = item.dataset.idx;
+      config.engines.splice(idx, 1);
+      if(currentEngineIdx >= config.engines.length) currentEngineIdx = 0;
+      saveData();
+      renderEnginesList();
+      renderEngines();
+    });
+  });
+}
+
+document.getElementById('add-shortcut').addEventListener('click', () => {
+  shortcuts.push({ name: '', url: '', letter: '', imgUrl: '' });
+  saveData();
+  renderSettingsList();
+});
+
+// --- Save & Revert ---
+function saveData() {
+  localStorage.setItem('start-shortcuts', JSON.stringify(shortcuts));
+  localStorage.setItem('start-config', JSON.stringify(config));
+}
+
+document.getElementById('save-settings').addEventListener('click', () => {
+  applyConfig();
+  renderGrid();
+  renderCustomWidget();
+  closeSidebar();
+});
+
+document.getElementById('btn-revert').addEventListener('click', () => {
+  if(!confirm("Are you sure you want to revert to the default DesignT configuration?")) return;
+  config = {...defaultConfig};
+  shortcuts = [...defaultShortcuts];
+  customThemes = {};
+  localStorage.removeItem('start-custom-themes');
+  saveData();
+  populateSettings(); 
+  applyConfig();
+  renderGrid();
+  renderEngines();
+  renderCustomWidget();
+});
+
+// Boot up
+init();
+</script>
+
+</body>
+</html>
