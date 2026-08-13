@@ -27,15 +27,24 @@
   --anim-height: 4px;
   --bg-grad: none;
   --bg-image: none;
+  --bg-brightness: 100%;
+  --bg-blur: 0px;
   --search-bg: color-mix(in srgb, var(--fg) 5%, var(--bg));
   --search-text: var(--fg);
   --search-border: color-mix(in srgb, var(--fg) 20%, transparent);
   --clock-size: 14px;
-  
-  /* Unified Radius Scaling Variables */
+  --clock-x: 0px;
+  --clock-y: 0px;
+  --weather-x: auto;
+  --weather-y: 20px;
+  --weather-right: 20px;
+  --weather-w: 170px;
+  --weather-fs: 13px;
   --r-lg: clamp(0px, var(--radius), 24px);
   --r-md: clamp(0px, var(--radius), 12px);
   --r-sm: clamp(0px, var(--radius), 8px);
+  --ui-scale: 100%;
+  --focus-accent: #fabd2f;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -52,9 +61,10 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   position: relative;
+  touch-action: manipulation;
+  zoom: var(--ui-scale);
 }
 
-/* Custom Background Image Overlay */
 body::before {
   content: '';
   position: fixed;
@@ -63,9 +73,45 @@ body::before {
   background-size: cover;
   background-position: center;
   z-index: -1;
+  filter: brightness(var(--bg-brightness)) blur(var(--bg-blur));
 }
 
-/* Main wrapper allows for X and Y offset adjustment */
+/* =========================================
+   ACCESSIBILITY FEATURES
+   ========================================= */
+.skip-link {
+  position: absolute;
+  top: -50px;
+  left: 10px;
+  background: var(--fg);
+  color: var(--bg);
+  padding: 12px 24px;
+  z-index: 1000;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  font-weight: bold;
+  transition: top 0.2s;
+}
+.skip-link:focus { top: 10px; }
+
+*:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .content-wrapper {
   display: flex;
   flex-direction: column;
@@ -75,19 +121,405 @@ body::before {
   width: 100%;
   padding: 40px 20px;
   transform: translate(var(--pos-x), var(--pos-y));
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-/* --- Typography & Elements --- */
-.clock {
+/* =========================================
+   CLOCK STYLES
+   ========================================= */
+.clock-container {
+  transform: translate(var(--clock-x), var(--clock-y));
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.clock-style-minimal { flex-direction: column; }
+.clock-style-minimal .clock-time {
   font-size: var(--clock-size);
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  margin-bottom: 30px;
   font-variant-numeric: tabular-nums;
   font-weight: bold;
 }
+.clock-style-withDate { gap: 12px; }
+.clock-style-withDate.date-top { flex-direction: column-reverse; }
+.clock-style-withDate.date-bottom { flex-direction: column; }
+.clock-style-withDate.date-left { flex-direction: row-reverse; }
+.clock-style-withDate.date-right { flex-direction: row; }
+.clock-style-withDate.date-hidden .clock-date { display: none; }
+.clock-style-withDate .clock-time {
+  font-size: var(--clock-size);
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+}
+.clock-style-withDate .clock-date {
+  font-size: calc(var(--clock-size) * 0.65);
+  opacity: 0.7;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+}
+.clock-style-vertical { flex-direction: column; gap: 16px; }
+.clock-style-vertical .clock-time {
+  font-size: var(--clock-size);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.clock-style-vertical .clock-date {
+  font-size: calc(var(--clock-size) * 0.45);
+  opacity: 0.5;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.clock-style-vertical .clock-divider {
+  width: calc(var(--clock-size) * 3);
+  height: 1px;
+  background: var(--fg);
+  opacity: 0.2;
+}
+.clock-style-feelsLike { flex-direction: column; gap: 8px; }
+.clock-style-feelsLike .clock-time {
+  font-size: var(--clock-size);
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+}
+.clock-style-feelsLike .clock-feels {
+  font-size: calc(var(--clock-size) * 0.6);
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.clock-style-weatherIntegrated { gap: 16px; }
+.clock-style-weatherIntegrated .clock-time {
+  font-size: var(--clock-size);
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+}
+.clock-style-weatherIntegrated .clock-weather-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: calc(var(--clock-size) * 0.7);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.clock-style-weatherIntegrated .clock-weather-mini img {
+  width: calc(var(--clock-size) * 1.5);
+  height: calc(var(--clock-size) * 1.5);
+  object-fit: contain;
+}
+.clock-style-weatherIntegrated .clock-weather-emoji {
+  font-size: calc(var(--clock-size) * 1.2);
+  display: none;
+}
+.clock-style-analog { gap: 16px; }
+.clock-style-analog.date-top { flex-direction: column-reverse; }
+.clock-style-analog.date-bottom { flex-direction: column; }
+.clock-style-analog.date-left { flex-direction: row-reverse; }
+.clock-style-analog.date-right { flex-direction: row; }
+.clock-style-analog.date-hidden .clock-date { display: none; }
+.clock-style-analog svg {
+  width: calc(var(--clock-size) * 10);
+  height: calc(var(--clock-size) * 10);
+  max-width: 280px;
+  max-height: 280px;
+}
+.analog-clock .clock-face { fill: color-mix(in srgb, var(--fg) 5%, transparent); stroke: var(--fg); stroke-width: 2; }
+.analog-clock .hour-mark { stroke: var(--fg); stroke-width: 2; opacity: 0.4; }
+.analog-clock .hour-number { fill: var(--fg); font-size: 12px; font-family: var(--font-family); opacity: 0.5; }
+.analog-clock .hour-hand { stroke: var(--fg); stroke-width: 4; stroke-linecap: round; }
+.analog-clock .minute-hand { stroke: var(--fg); stroke-width: 3; stroke-linecap: round; }
+.analog-clock .second-hand { stroke: var(--fg); stroke-width: 1.5; stroke-linecap: round; opacity: 0.6; }
+.analog-clock .clock-center { fill: var(--fg); }
+.clock-style-analog .clock-date {
+  font-size: calc(var(--clock-size) * 0.6);
+  opacity: 0.6;
+  white-space: nowrap;
+  letter-spacing: 0.1em;
+}
 
-/* --- Custom Widget Container --- */
+/* =========================================
+   FOCUS MODE - PROMINENT & CENTERED
+   ========================================= */
+.focus-note-wrap {
+  display: none;
+  margin-bottom: 30px;
+  width: 100%;
+  max-width: 400px;
+  justify-content: center;
+}
+.focus-note-wrap.active { display: flex; }
+.focus-note {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid color-mix(in srgb, var(--fg) 30%, transparent);
+  color: var(--fg);
+  font-size: 18px;
+  text-align: center;
+  outline: none;
+  padding: 8px 16px;
+  width: 100%;
+  font-family: var(--font-family);
+  transition: border-color 0.2s;
+}
+.focus-note:focus { border-color: var(--fg); }
+.focus-note::placeholder { color: var(--fg); opacity: 0.4; }
+
+/* Greeting Message */
+.greeting {
+  display: none;
+  font-size: 13px;
+  opacity: 0.5;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  transition: opacity 0.4s;
+}
+.greeting.active { display: block; }
+
+/* Focus Mode Indicator - mini text */
+.focus-mode-indicator {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-30px);
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--fg);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s ease;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.focus-mode-indicator::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--focus-accent);
+  box-shadow: 0 0 8px var(--focus-accent);
+  animation: focusPulse 2s ease-in-out infinite;
+}
+@keyframes focusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+body.focus-mode .focus-mode-indicator {
+  opacity: 0.8;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Focus Mode - hide distractions, center content */
+body.focus-mode .grid,
+body.focus-mode .search-wrap,
+body.focus-mode .center-btn-wrap,
+body.focus-mode .hint,
+body.focus-mode .credits,
+body.focus-mode .floating-btn-group,
+body.focus-mode .weather-widget,
+body.focus-mode .custom-btn-container,
+body.focus-mode #custom-widget-container,
+body.focus-mode .pomodoro-wrap {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+body.focus-mode .content-wrapper {
+  transform: translate(var(--pos-x), var(--pos-y)) scale(1);
+  justify-content: center;
+}
+
+body.focus-mode .clock-container {
+  margin-bottom: 50px;
+  opacity: 0.85;
+}
+
+body.focus-mode .greeting {
+  display: block;
+  opacity: 0.6;
+}
+
+body.focus-mode .focus-note-wrap {
+  display: flex !important;
+  max-width: 700px;
+  margin-bottom: 20px;
+}
+
+body.focus-mode .focus-note {
+  font-size: 36px;
+  font-weight: 300;
+  border-bottom: 2px solid color-mix(in srgb, var(--focus-accent) 50%, transparent);
+  padding: 16px 32px;
+  letter-spacing: 0.01em;
+  background: transparent;
+}
+
+body.focus-mode .focus-note:focus {
+  border-color: var(--focus-accent);
+}
+
+body.focus-mode .focus-note::placeholder {
+  opacity: 0.3;
+  font-style: italic;
+}
+
+/* Focus Exit Hint */
+.focus-exit-hint {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0;
+  color: var(--fg);
+  pointer-events: none;
+  transition: all 0.4s ease 0.6s;
+  z-index: 200;
+}
+body.focus-mode .focus-exit-hint {
+  opacity: 0.4;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Pomodoro Timer */
+.pomodoro-wrap {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 40px;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.pomodoro-wrap.active { display: flex; opacity: 1; }
+
+.pomodoro-label {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.pomodoro-timer {
+  font-size: 56px;
+  font-weight: 200;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.pomodoro-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.pomodoro-btn {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent);
+  color: var(--fg);
+  padding: 8px 18px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.pomodoro-btn:hover {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+
+.pomodoro-mode-label {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.4;
+  margin-top: 4px;
+}
+
+/* Focus Toggle Button */
+.focus-toggle-btn {
+  width: 40px;
+  height: 40px;
+  background: color-mix(in srgb, var(--fg) 10%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+  color: var(--fg);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+}
+.focus-toggle-btn:hover {
+  background: var(--focus-accent);
+  color: var(--bg);
+  border-color: var(--focus-accent);
+}
+body.focus-mode .focus-toggle-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 300;
+  opacity: 0.5;
+}
+body.focus-mode .focus-toggle-btn:hover {
+  opacity: 1;
+}
+
+/* Offline Indicator */
+.offline-indicator {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: color-mix(in srgb, #ff4444 20%, var(--bg));
+  border: 1px solid #ff4444;
+  color: #ff8888;
+  padding: 8px 20px;
+  border-radius: var(--r-md);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  z-index: 500;
+  transition: transform 0.4s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+}
+.offline-indicator::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff4444;
+}
+.offline-indicator.show {
+  transform: translateX(-50%) translateY(0);
+}
+
 #custom-widget-container {
   position: fixed;
   top: 20px;
@@ -98,42 +530,88 @@ body::before {
 }
 #custom-widget-container.active { display: block; }
 
-/* --- Weather Widget (Themed to match Shortcuts) --- */
 .weather-widget {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: var(--weather-y);
+  left: var(--weather-x);
+  right: var(--weather-right);
   background: color-mix(in srgb, var(--fg) 8%, var(--bg));
   border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
-  border-radius: var(--r-lg); /* Unified Radius */
+  border-radius: var(--r-lg);
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  padding: 12px;
+  padding: 1em;
   display: none;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.6em;
   z-index: 50;
-  width: 160px;
+  width: var(--weather-w);
+  font-size: var(--weather-fs);
   color: var(--fg);
+  touch-action: none;
 }
 .weather-widget.active { display: flex; }
-
-.weather-header { display: flex; justify-content: space-between; align-items: center; }
-.weather-loc { font-size: 14px; font-weight: 600; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.weather-dots { font-size: 18px; cursor: pointer; opacity: 0.6; line-height: 1; }
-
-.weather-main { display: flex; align-items: center; gap: 12px; background: color-mix(in srgb, var(--fg) 12%, var(--bg)); padding: 10px; border-radius: var(--r-md); min-height: 60px; }
-.weather-icon { width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-.weather-emoji { font-size: 32px; display: none; }
-.weather-temp { font-size: 28px; font-weight: bold; }
-
-.weather-highlow { font-size: 12px; opacity: 0.8; display: flex; justify-content: space-between; padding: 0 4px; }
-
-/* --- Center Taskbar Button --- */
-.center-btn-wrap {
+.weather-header { display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none; }
+.weather-loc { font-size: 1.1em; font-weight: 600; max-width: 12em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.weather-menu-wrap { position: relative; }
+.weather-dots { font-size: 1.4em; cursor: pointer; opacity: 0.6; line-height: 1; padding: 0 4px; background: transparent; border: none; color: var(--fg); }
+.weather-dots:hover { opacity: 1; }
+.weather-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--fg);
+  border-radius: var(--r-sm);
   display: none;
-  margin-bottom: 30px;
+  flex-direction: column;
+  z-index: 200;
+  min-width: 140px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  overflow: hidden;
 }
+.weather-menu.active { display: flex; }
+.weather-menu button {
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  padding: 8px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.weather-menu button:hover { background: var(--fg); color: var(--bg); }
+.weather-main { display: flex; align-items: center; gap: 0.8em; background: color-mix(in srgb, var(--fg) 12%, var(--bg)); padding: 0.8em; border-radius: var(--r-md); min-height: 4em; }
+.weather-icon { width: 3em; height: 3em; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.weather-emoji { font-size: 2.5em; display: none; }
+.weather-temp { font-size: 2.2em; font-weight: bold; }
+.weather-highlow { font-size: 0.9em; opacity: 0.8; display: flex; justify-content: space-between; padding: 0 0.4em; }
+.weather-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: se-resize;
+  z-index: 200;
+  touch-action: none;
+}
+.weather-resize-handle::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--fg);
+  border-bottom: 2px solid var(--fg);
+  opacity: 0.4;
+}
+
+.center-btn-wrap { display: none; margin-bottom: 30px; }
 .center-btn-wrap.active { display: flex; }
 .center-btn {
   display: flex;
@@ -158,20 +636,14 @@ body:not(.no-anim) .center-btn:hover {
   color: var(--bg);
   transform: translateY(-2px);
 }
-.center-btn img {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  object-fit: contain;
-}
+.center-btn img { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; }
 
-/* --- Search Bar --- */
 .search-wrap {
   width: 100%;
   max-width: var(--search-width);
   margin-bottom: var(--grid-gap);
+  position: relative;
 }
-
 .search-input {
   width: 100%;
   padding: var(--search-y) 24px;
@@ -180,7 +652,7 @@ body:not(.no-anim) .center-btn:hover {
   background: var(--search-bg);
   color: var(--search-text);
   border: 1px solid var(--search-border);
-  border-radius: var(--r-lg); /* Unified Radius */
+  border-radius: var(--r-lg);
   outline: none;
   backdrop-filter: blur(8px);
   box-shadow: 0 var(--search-z) calc(var(--search-z) * 2) rgba(0,0,0,0.2);
@@ -193,6 +665,37 @@ body:not(.no-anim) .center-btn:hover {
 }
 .search-input::placeholder { color: var(--search-text); opacity: 0.6; }
 .search-input:focus::placeholder { color: var(--search-bg); opacity: 0.6; }
+
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border: 1px solid var(--search-border);
+  border-radius: var(--r-md);
+  margin-top: 4px;
+  display: none;
+  flex-direction: column;
+  z-index: 100;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.search-suggestions.active { display: flex; }
+.search-suggestion-item {
+  padding: 10px 24px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--fg);
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.search-suggestion-item:hover, .search-suggestion-item.highlighted {
+  background: color-mix(in srgb, var(--fg) 10%, var(--bg));
+}
 
 .engines {
   display: flex;
@@ -222,14 +725,12 @@ body:not(.no-anim) .center-btn:hover {
   border-color: var(--fg);
 }
 
-/* --- Shortcut Grid & Quick Menu (Glassmorphism) --- */
 .grid {
   display: grid;
   grid-template-columns: repeat(var(--columns), var(--tile-size));
   gap: 24px 16px;
   justify-content: center;
 }
-
 .tile-wrap, .placeholder-wrap {
   position: relative;
   display: flex;
@@ -237,7 +738,9 @@ body:not(.no-anim) .center-btn:hover {
   align-items: center;
   width: var(--tile-size);
 }
-
+.tile-wrap { cursor: grab; }
+.tile-wrap.dragging { opacity: 0.4; cursor: grabbing; }
+.tile-wrap.drag-over { transform: scale(1.1); }
 .tile {
   display: flex;
   flex-direction: var(--label-flex);
@@ -247,13 +750,12 @@ body:not(.no-anim) .center-btn:hover {
   text-decoration: none;
   width: 100%;
 }
-
 .tile-box, .placeholder-box {
   width: var(--tile-size);
   height: var(--tile-size);
   background: color-mix(in srgb, var(--fg) 8%, var(--bg));
   border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
-  border-radius: var(--r-lg); /* Unified Radius */
+  border-radius: var(--r-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -262,7 +764,6 @@ body:not(.no-anim) .center-btn:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
 }
-
 .placeholder-box {
   background: transparent;
   border: 1px dashed color-mix(in srgb, var(--fg) 30%, transparent);
@@ -276,21 +777,18 @@ body:not(.no-anim) .placeholder-box:hover {
   transform: translateY(-4px);
   background: color-mix(in srgb, var(--fg) 10%, var(--bg));
 }
-
-body:not(.no-anim) .tile:hover .tile-box {
+body:not(.no-anim) .tile-wrap:hover .tile-box {
   background: color-mix(in srgb, var(--fg) 15%, var(--bg));
   transform: translateY(calc(-1 * var(--anim-height)));
   box-shadow: 0 8px 20px rgba(0,0,0,0.4);
 }
-
 .tile-img {
   width: var(--icon-size);
   height: var(--icon-size);
   object-fit: contain;
-  pointer-events: none;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  pointer-events: none;
 }
-
 .tile-fallback {
   width: var(--icon-size);
   height: var(--icon-size);
@@ -300,8 +798,8 @@ body:not(.no-anim) .tile:hover .tile-box {
   font-weight: 700;
   font-size: calc(var(--icon-size) / 2.5);
   color: var(--fg);
+  pointer-events: none;
 }
-
 .tile-label {
   font-size: var(--label-size);
   letter-spacing: 0.05em;
@@ -312,10 +810,9 @@ body:not(.no-anim) .tile:hover .tile-box {
   white-space: nowrap;
   text-align: center;
   opacity: 0.8;
+  pointer-events: none;
 }
 .placeholder-wrap .tile-label { opacity: 0; }
-
-/* Quick Edit Burger Menu */
 .tile-burger {
   position: absolute;
   top: -4px;
@@ -332,9 +829,8 @@ body:not(.no-anim) .tile:hover .tile-box {
   z-index: 2;
   border-radius: 4px;
 }
-.tile-wrap:hover .tile-burger { opacity: 0.7; }
+.tile-wrap:hover .tile-burger, .tile-wrap:focus-within .tile-burger { opacity: 0.7; }
 .tile-burger:hover { opacity: 1 !important; background: var(--fg); color: var(--bg) !important; }
-
 .tile-drop {
   position: absolute;
   top: 26px;
@@ -364,7 +860,6 @@ body:not(.no-anim) .tile:hover .tile-box {
 .tile-drop button:hover { background: var(--fg); color: var(--bg); }
 .tile-drop button.danger:hover { background: #ff4444; color: var(--bg); }
 
-/* --- Hints & Credits --- */
 .hint {
   position: fixed;
   bottom: 20px;
@@ -378,7 +873,6 @@ body:not(.no-anim) .tile:hover .tile-box {
   opacity: 0.5;
   pointer-events: none;
 }
-
 .credits {
   position: fixed;
   bottom: 20px;
@@ -393,7 +887,6 @@ body:not(.no-anim) .tile:hover .tile-box {
 }
 .credits:hover { opacity: 1; }
 
-/* --- Floating Buttons (Settings & GitHub) --- */
 .floating-btn-group {
   position: fixed;
   bottom: 20px;
@@ -423,7 +916,89 @@ body:not(.no-anim) .tile:hover .tile-box {
 }
 .mini-widget-btn img { width: 20px; height: 20px; }
 
-/* --- Side Menu (Sidebar) --- */
+.custom-btn-container {
+  position: fixed;
+  display: flex;
+  gap: 10px;
+  z-index: 90;
+}
+.custom-btn-container:empty { display: none; }
+.custom-btn-container[data-pos="left"] {
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+.custom-btn-container[data-pos="top-right"] {
+  top: 20px;
+  right: 20px;
+  flex-direction: column;
+}
+.custom-btn-container[data-pos="bottom"] {
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+}
+.custom-float-btn {
+  width: 40px;
+  height: 40px;
+  background: color-mix(in srgb, var(--fg) 10%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+  text-decoration: none;
+  color: var(--fg);
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+body:not(.no-anim) .custom-float-btn:hover {
+  background: var(--fg);
+  color: var(--bg);
+  transform: translateY(-2px);
+}
+.custom-float-btn img {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  pointer-events: none;
+}
+.toast {
+  background: var(--fg);
+  color: var(--bg);
+  padding: 12px 24px;
+  border-radius: var(--r-md);
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -433,7 +1008,6 @@ body:not(.no-anim) .tile:hover .tile-box {
   z-index: 90;
 }
 .sidebar-overlay.active { display: block; }
-
 .sidebar {
   position: fixed;
   top: 0;
@@ -445,20 +1019,19 @@ body:not(.no-anim) .tile:hover .tile-box {
   border-left: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
   transition: right 0.3s ease;
   z-index: 100;
-  overflow-y: auto; /* Single scroll block for entire sidebar */
+  overflow-y: auto;
   display: block;
 }
 .sidebar.active { right: 0; }
-
 .sidebar-sticky-top {
   position: sticky;
   top: 0;
-  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(12px);
   z-index: 20;
   padding: 30px 20px 10px;
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
 }
-
 .sidebar-header {
   display: flex;
   justify-content: space-between;
@@ -476,11 +1049,7 @@ body:not(.no-anim) .tile:hover .tile-box {
   font-size: 24px;
   cursor: pointer;
 }
-
-/* Settings Search */
-.settings-search-wrap {
-  margin-bottom: 15px;
-}
+.settings-search-wrap { margin-bottom: 15px; }
 .settings-search {
   width: 100%;
   background: color-mix(in srgb, var(--fg) 5%, var(--bg));
@@ -492,13 +1061,7 @@ body:not(.no-anim) .tile:hover .tile-box {
   outline: none;
 }
 .settings-search::placeholder { color: var(--fg); opacity: 0.5; }
-
-/* Tabs */
-.tabs {
-  display: flex;
-  border-bottom: none; /* Removed border to put on sticky top */
-  margin-bottom: 0;
-}
+.tabs { display: flex; border-bottom: none; margin-bottom: 0; }
 .tab-btn {
   flex: 1;
   background: transparent;
@@ -514,30 +1077,22 @@ body:not(.no-anim) .tile:hover .tile-box {
   transition: opacity 0.2s;
   border-bottom: 2px solid transparent;
 }
-.tab-btn.active {
-  opacity: 1;
-  border-bottom-color: var(--fg);
-}
-
-.sidebar-content {
-  padding: 20px;
-}
-
-.tab-content {
-  display: none;
-  flex-direction: column;
-}
+.tab-btn.active { opacity: 1; border-bottom-color: var(--fg); }
+.sidebar-content { padding: 20px; }
+.tab-content { display: none; flex-direction: column; }
 .tab-content.active { display: flex; }
-
-/* Collapsible Accordion for decluttering */
 .accordion-item {
   margin-bottom: 10px;
   border: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
   border-radius: var(--r-md);
   overflow: hidden;
+  background: color-mix(in srgb, var(--fg) 3%, transparent);
+  transition: border-color 0.2s;
 }
+.accordion-item:hover { border-color: color-mix(in srgb, var(--fg) 25%, transparent); }
+.accordion-item[open] { border-color: color-mix(in srgb, var(--fg) 25%, transparent); }
 .accordion-summary {
-  background: color-mix(in srgb, var(--fg) 5%, var(--bg));
+  background: transparent;
   padding: 12px 16px;
   cursor: pointer;
   font-size: 12px;
@@ -553,8 +1108,6 @@ body:not(.no-anim) .tile:hover .tile-box {
 .accordion-summary::after { content: '+'; font-size: 16px; opacity: 0.5; }
 .accordion-item[open] .accordion-summary::after { content: '-'; }
 .accordion-content { padding: 16px; }
-
-/* Settings Inputs */
 .settings-row {
   display: flex;
   gap: 8px;
@@ -565,8 +1118,7 @@ body:not(.no-anim) .tile:hover .tile-box {
   transition: background 0.3s;
 }
 .settings-row.highlight { background: color-mix(in srgb, var(--fg) 20%, transparent); }
-
-.shortcut-item, .engine-item {
+.shortcut-item, .engine-item, .custom-btn-item {
   border: 1px dashed color-mix(in srgb, var(--fg) 30%, transparent);
   border-radius: var(--r-md);
   padding: 10px;
@@ -574,8 +1126,7 @@ body:not(.no-anim) .tile:hover .tile-box {
   opacity: 0.8;
   transition: opacity 0.2s;
 }
-.shortcut-item:hover, .engine-item:hover { opacity: 1; }
-
+.shortcut-item:hover, .engine-item:hover, .custom-btn-item:hover { opacity: 1; }
 .set-input {
   background: transparent;
   color: var(--fg);
@@ -595,29 +1146,132 @@ body:not(.no-anim) .tile:hover .tile-box {
 .set-img { flex: 1; }
 textarea.set-input { resize: vertical; min-height: 120px; font-family: monospace; }
 textarea.code-input { resize: vertical; min-height: 200px; font-family: monospace; font-size: 11px; }
-
-/* Appearance Controls */
 .control-group { margin-bottom: 0; display: flex; flex-direction: column; gap: 8px; }
 .control-group label { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
 .control-group .sub-label { font-size: 10px; opacity: 0.6; text-transform: none; letter-spacing: 0.05em; margin-top: 5px; display: flex; justify-content: space-between; }
 .default-val { opacity: 0.5; font-style: italic; }
-
 .color-picker-wrap { display: flex; gap: 12px; }
 .color-picker { display: flex; align-items: center; gap: 8px; font-size: 12px; border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); padding: 6px; flex: 1; border-radius: var(--r-sm); }
 input[type="color"] { background: transparent; border: none; width: 24px; height: 24px; cursor: pointer; padding: 0; }
 input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 input[type="color"]::-webkit-color-swatch { border: 1px solid var(--fg); border-radius: 4px; }
-
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: color-mix(in srgb, var(--fg) 20%, transparent);
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--fg);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--fg);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
 .range-wrap { display: flex; gap: 12px; align-items: center; }
-input[type="range"] { flex: 1; accent-color: var(--fg); }
 .num-input { width: 70px; padding: 6px; text-align: center; }
-
 select.set-input { cursor: pointer; background: var(--bg); }
+.checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  user-select: none;
+}
+.checkbox-wrap input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 36px;
+  height: 20px;
+  background: color-mix(in srgb, var(--fg) 20%, transparent);
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: 1px solid transparent;
+}
+.checkbox-wrap input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  background: var(--fg);
+  transition: transform 0.2s;
+}
+.checkbox-wrap input[type="checkbox"]:checked { background: var(--fg); }
+.checkbox-wrap input[type="checkbox"]:checked::before {
+  transform: translateX(16px);
+  background: var(--bg);
+}
+.custom-file-upload {
+  border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent);
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+  color: var(--fg);
+  padding: 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+  display: block;
+  width: 100%;
+}
+.custom-file-upload:hover {
+  background: color-mix(in srgb, var(--fg) 15%, transparent);
+  border-color: var(--fg);
+}
+#cfg-bg-upload { display: none; }
+.file-name {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 6px;
+  text-transform: none;
+  letter-spacing: normal;
+  display: block;
+  text-align: center;
+}
 
-.checkbox-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
-.checkbox-wrap input { accent-color: var(--fg); width: 16px; height: 16px; cursor: pointer; }
+/* Wallpaper Presets Grid */
+.wallpaper-presets-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+.wallpaper-presets-grid .action-btn {
+  margin-top: 0;
+  padding: 10px 8px;
+  font-size: 10px;
+}
+.wallpaper-preset-btn.wallpaper-preset-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
 
-/* Autocomplete Dropdown */
 .autocomplete-wrap { position: relative; }
 .autocomplete-dropdown {
   position: absolute;
@@ -640,61 +1294,144 @@ select.set-input { cursor: pointer; background: var(--bg); }
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
 }
 .autocomplete-item:hover { background: color-mix(in srgb, var(--fg) 10%, var(--bg)); }
-
-/* Shadcn-style Buttons */
 .action-btn { background: transparent; color: var(--fg); border: 1px solid var(--fg); padding: 12px; font-size: 12px; font-weight: bold; font-family: inherit; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; width: 100%; margin-top: 10px; transition: all 0.2s; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; gap: 8px; }
 .action-btn:hover { background: var(--fg); color: var(--bg); }
 .action-btn.primary { background: var(--fg); color: var(--bg); margin-top: 20px; padding: 16px; }
 .action-btn.primary:hover { background: transparent; color: var(--fg); }
 .action-btn.secondary { border-color: color-mix(in srgb, var(--fg) 50%, transparent); opacity: 0.8; }
-
 .shadcn-input-group { display: flex; gap: 0; border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); border-radius: var(--r-sm); overflow: hidden; }
 .shadcn-input-group textarea { border: none; border-radius: 0; border-right: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); }
 .shadcn-copy-btn { background: color-mix(in srgb, var(--fg) 10%, transparent); color: var(--fg); border: none; padding: 0 16px; cursor: pointer; font-weight: bold; transition: background 0.2s; display: flex; align-items: center; gap: 6px; font-size: 12px; text-transform: uppercase; }
 .shadcn-copy-btn:hover { background: color-mix(in srgb, var(--fg) 20%, transparent); }
 .shadcn-copy-btn svg { width: 14px; height: 14px; }
-
 .del-btn { background: transparent; border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); color: var(--fg); cursor: pointer; padding: 8px 12px; font-size: 14px; font-weight: bold; flex: 0 0 auto; border-radius: var(--r-sm); }
 .del-btn:hover { background: #ff4444; color: var(--bg); border-color: #ff4444; }
 
+body.zen-mode .grid,
+body.zen-mode .search-wrap,
+body.zen-mode .center-btn-wrap,
+body.zen-mode .hint,
+body.zen-mode .credits,
+body.zen-mode .floating-btn-group,
+body.zen-mode .weather-widget,
+body.zen-mode .custom-btn-container,
+body.zen-mode .focus-note-wrap,
+body.zen-mode #custom-widget-container {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+}
+body.zen-mode .content-wrapper {
+  transform: scale(1.05) translate(var(--pos-x), var(--pos-y));
+}
+
+@media (max-width: 768px) {
+  :root {
+    --search-width: 90vw;
+    --tile-size: 64px;
+    --grid-gap: 30px;
+    --icon-size: 32px;
+  }
+  .weather-widget {
+    top: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    width: 140px !important;
+    font-size: 11px !important;
+  }
+  .credits, .hint { display: none; }
+  .floating-btn-group { bottom: 15px; right: 15px; }
+  .sidebar { max-width: 100%; border-left: none; }
+  .content-wrapper { padding: 20px 10px; }
+  .custom-btn-container[data-pos="left"] { left: 10px; gap: 8px; }
+  .custom-btn-container[data-pos="top-right"] { top: 10px; right: 10px; gap: 8px; }
+  .custom-btn-container[data-pos="bottom"] { bottom: 70px; }
+  .custom-float-btn { width: 36px; height: 36px; font-size: 14px; }
+  .custom-float-btn img { width: 18px; height: 18px; }
+  body.focus-mode .focus-note { font-size: 24px; }
+  .pomodoro-timer { font-size: 40px; }
+}
 @media (max-width: 480px) {
-  .grid { grid-template-columns: repeat(3, var(--tile-size)) !important; }
-  .sidebar { border-left: none; }
+  :root {
+    --tile-size: 56px;
+    --icon-size: 28px;
+    --columns: 3;
+  }
+  .grid { grid-template-columns: repeat(var(--columns), var(--tile-size)) !important; }
+  .clock-container { margin-bottom: 20px; }
 }
 </style>
-<!-- Google Fonts for Font Customization (Including Qwant's official: Open Sans) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Open+Sans:wght@400;700&family=Roboto:wght@400;700&family=Fira+Code&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Open+Sans:wght@400;700&family=Roboto:wght@400;700&family=Fira+Code&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Source+Code+Pro:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;700&family=Space+Grotesk:wght@400;700&family=Nunito:wght@400;700&family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
+<a href="#main-content" class="skip-link">Skip to main content</a>
 <a href="https://github.com/Kamaldins" target="_blank" class="credits" id="credits">Made with &lt;3 by Kamaldins on GitHub</a>
+<div id="custom-widget-container" aria-hidden="true"></div>
 
-<!-- Custom Widget Container -->
-<div id="custom-widget-container"></div>
+<!-- Focus Mode Indicator -->
+<div class="focus-mode-indicator" id="focus-mode-indicator">Focus Mode On</div>
 
-<!-- Weather Widget -->
-<div class="weather-widget" id="weather-widget">
-  <div class="weather-header">
+<!-- Focus Exit Hint -->
+<div class="focus-exit-hint" id="focus-exit-hint">Press F or Esc to exit</div>
+
+<!-- Offline Indicator -->
+<div class="offline-indicator" id="offline-indicator">Offline Mode</div>
+
+<nav class="custom-btn-container" id="custom-btn-left" data-pos="left" aria-label="Custom shortcuts left"></nav>
+<nav class="custom-btn-container" id="custom-btn-top-right" data-pos="top-right" aria-label="Custom shortcuts top right"></nav>
+<nav class="custom-btn-container" id="custom-btn-bottom" data-pos="bottom" aria-label="Custom shortcuts bottom"></nav>
+
+<section class="weather-widget" id="weather-widget" aria-label="Weather widget">
+  <div class="weather-header" id="weather-drag-handle">
     <span class="weather-loc" id="weather-loc">--</span>
-    <span class="weather-dots">⋮</span>
+    <div class="weather-menu-wrap">
+      <button class="weather-dots" id="weather-dots-btn" aria-label="Weather options" aria-expanded="false">⋮</button>
+      <div class="weather-menu" id="weather-menu" role="menu">
+        <button id="weather-refresh-btn" role="menuitem">Refresh</button>
+        <button id="weather-change-btn" role="menuitem">Change Location</button>
+        <button id="weather-hide-btn" role="menuitem">Hide Weather</button>
+      </div>
+    </div>
   </div>
   <div class="weather-main">
-    <img id="weather-icon" src="" alt="Weather">
-    <span id="weather-emoji" class="weather-emoji">☀️</span>
+    <img id="weather-icon" src="" alt="Weather condition" class="weather-icon">
+    <span id="weather-emoji" class="weather-emoji" aria-hidden="true">☀️</span>
     <div class="weather-temp" id="weather-temp">--°</div>
   </div>
   <div class="weather-highlow">
     <span id="weather-high">↑--°</span> 
     <span id="weather-low">↓--°</span>
   </div>
-</div>
+  <div class="weather-resize-handle" id="weather-resize-handle" role="slider" aria-label="Resize weather widget" tabindex="0"></div>
+</section>
 
-<div class="content-wrapper">
-  <div class="clock" id="clock">--:--</div>
+<main class="content-wrapper" id="main-content">
+  <div class="greeting" id="greeting"></div>
+  
+  <div class="clock-container clock-style-minimal" id="clock-container" role="timer" aria-label="Current time">
+    <div class="clock-time" id="clock-time">--:--</div>
+  </div>
 
-  <!-- Center Taskbar Button -->
+  <div class="focus-note-wrap" id="focus-note-wrap">
+    <input type="text" id="focus-note" class="focus-note" placeholder="What is your main focus today?" aria-label="Daily focus note">
+  </div>
+
+  <!-- Pomodoro Timer -->
+  <div class="pomodoro-wrap" id="pomodoro-wrap">
+    <div class="pomodoro-label">Pomodoro</div>
+    <div class="pomodoro-timer" id="pomodoro-timer">25:00</div>
+    <div class="pomodoro-mode-label" id="pomodoro-mode-label">Work Session</div>
+    <div class="pomodoro-controls">
+      <button class="pomodoro-btn" id="pomodoro-start">Start</button>
+      <button class="pomodoro-btn" id="pomodoro-pause">Pause</button>
+      <button class="pomodoro-btn" id="pomodoro-reset">Reset</button>
+      <button class="pomodoro-btn" id="pomodoro-skip">Skip</button>
+    </div>
+  </div>
+
   <div class="center-btn-wrap" id="center-btn-wrap">
     <a href="#" class="center-btn" id="center-btn">
       <span id="center-btn-text">Launch</span>
@@ -702,33 +1439,39 @@ select.set-input { cursor: pointer; background: var(--bg); }
   </div>
 
   <div class="search-wrap">
-    <form id="search-form">
+    <form id="search-form" role="search">
       <input
         type="text"
         class="search-input"
         id="search-input"
         placeholder="Search or enter address"
-        autofocus
         autocomplete="off"
         spellcheck="false"
+        aria-label="Search the web"
       />
     </form>
-    <div class="engines" id="engines"></div>
+    <div class="search-suggestions" id="search-suggestions" role="listbox"></div>
+    <div class="engines" id="engines" role="group" aria-label="Search engines"></div>
   </div>
 
-  <div class="grid" id="grid"></div>
-</div>
+  <nav class="grid" id="grid" aria-label="Shortcuts"></nav>
+</main>
 
-<div class="hint">Press / to search · Tab to switch engine</div>
+<div class="hint" id="hint-text">Press / to search · F for Focus Mode · Tab to switch engine · Alt+1-9 for shortcuts</div>
 
-<div class="floating-btn-group">
-  <!-- Mini GitHub Widget -->
-  <a href="https://github.com/Kamaldins" target="_blank" class="mini-widget-btn" title="My GitHub">
+<div class="floating-btn-group" id="floating-btn-group">
+  <a href="https://github.com/Kamaldins" target="_blank" class="mini-widget-btn" id="github-link" title="My GitHub" aria-label="My GitHub">
     <img src="https://icons.duckduckgo.com/ip3/github.com.ico" alt="GitHub">
   </a>
-  <!-- Settings Button -->
-  <button class="settings-btn" id="open-settings">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <button class="focus-toggle-btn" id="focus-toggle-btn" title="Toggle Focus Mode (F)" aria-label="Toggle Focus Mode">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <circle cx="12" cy="12" r="6"></circle>
+      <circle cx="12" cy="12" r="2"></circle>
+    </svg>
+  </button>
+  <button class="settings-btn" id="open-settings" aria-label="Open settings">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3"></circle>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
     </svg>
@@ -737,61 +1480,149 @@ select.set-input { cursor: pointer; background: var(--bg); }
 
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-<!-- Side Menu -->
-<div class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" role="dialog" aria-modal="true" aria-label="Settings Menu">
   <div class="sidebar-sticky-top">
     <div class="sidebar-header">
       <span>DesignT Settings</span>
-      <button class="close-btn" id="close-settings">&times;</button>
+      <button class="close-btn" id="close-settings" aria-label="Close settings">&times;</button>
     </div>
-
     <div class="settings-search-wrap">
-      <input type="text" class="settings-search" id="settings-search" placeholder="Search settings...">
+      <input type="text" class="settings-search" id="settings-search" placeholder="Search settings..." aria-label="Search settings">
     </div>
-    
-    <div class="tabs">
-      <button class="tab-btn active" data-target="tab-shortcuts">Shortcuts</button>
-      <button class="tab-btn" data-target="tab-appearance">Appearance</button>
-      <button class="tab-btn" data-target="tab-advanced">Advanced</button>
-      <button class="tab-btn" data-target="tab-custom">Custom</button>
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" data-target="tab-shortcuts" role="tab" aria-selected="true">Shortcuts</button>
+      <button class="tab-btn" data-target="tab-appearance" role="tab" aria-selected="false">Appearance</button>
+      <button class="tab-btn" data-target="tab-advanced" role="tab" aria-selected="false">Advanced</button>
+      <button class="tab-btn" data-target="tab-custom" role="tab" aria-selected="false">Custom</button>
     </div>
   </div>
 
   <div class="sidebar-content">
-    <!-- Shortcuts Tab -->
-    <div class="tab-content active" id="tab-shortcuts">
+    <div class="tab-content active" id="tab-shortcuts" role="tabpanel">
       <div id="settings-list" style="margin-bottom: 10px;"></div>
       <button class="action-btn" id="add-shortcut">+ Add Shortcut</button>
     </div>
 
-    <!-- Appearance Tab -->
-    <div class="tab-content" id="tab-appearance">
-      
+    <div class="tab-content" id="tab-appearance" role="tabpanel">
       <details class="accordion-item" open>
-        <summary class="accordion-summary">Time & Background</summary>
+        <summary class="accordion-summary">Focus Mode Settings</summary>
         <div class="accordion-content">
           <div class="control-group">
-            <label class="sub-label">Clock Font Size (px) <span class="default-val">Default: 14</span></label>
+            <label class="checkbox-wrap" for="cfg-focus-note-toggle">
+              <input type="checkbox" id="cfg-focus-note-toggle"> Show Focus Note
+            </label>
+            <label class="checkbox-wrap" for="cfg-pomodoro-toggle">
+              <input type="checkbox" id="cfg-pomodoro-toggle"> Show Pomodoro Timer
+            </label>
+            <label class="checkbox-wrap" for="cfg-greeting-toggle">
+              <input type="checkbox" id="cfg-greeting-toggle"> Show Greeting Message
+            </label>
+            <label class="sub-label" for="cfg-focus-duration-slider" style="margin-top: 10px;">Focus Work Duration (min) <span class="default-val">Default: 25</span></label>
             <div class="range-wrap">
-              <input type="range" id="cfg-clock-size-slider" min="10" max="48" step="1">
-              <input type="number" id="cfg-clock-size-num" class="set-input num-input">
+              <input type="range" id="cfg-focus-duration-slider" min="5" max="60" step="5" aria-label="Focus duration">
+              <input type="number" id="cfg-focus-duration-num" class="set-input num-input" aria-label="Focus duration number">
             </div>
-            
-            <label class="sub-label" style="margin-top: 10px;">Timezone (e.g. America/New_York)</label>
-            <input type="text" class="set-input" id="cfg-clock-tz" placeholder="Auto (System Time)">
-
-            <label class="sub-label" style="margin-top: 10px;">Background Image Upload</label>
-            <input type="file" class="set-input" id="cfg-bg-upload" accept="image/*">
-            <button class="action-btn secondary" id="cfg-bg-clear" style="margin-top: 8px;">Clear Background Image</button>
+            <label class="sub-label" for="cfg-focus-accent" style="margin-top: 10px;">Focus Accent Color</label>
+            <div class="color-picker">
+              <input type="color" id="cfg-focus-accent" aria-label="Focus accent color"> <span>Accent</span>
+            </div>
           </div>
         </div>
       </details>
 
       <details class="accordion-item" open>
+        <summary class="accordion-summary">Clock & Time</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label class="sub-label" for="cfg-clock-style">Clock Style</label>
+            <select class="set-input" id="cfg-clock-style">
+              <option value="minimal">Minimal (Time Only)</option>
+              <option value="withDate">With Date</option>
+              <option value="vertical">Vertical (Stacked)</option>
+              <option value="feelsLike">With Feels Like Temp</option>
+              <option value="weatherIntegrated">Weather Integrated</option>
+              <option value="analog">Analog Clock</option>
+            </select>
+            <label class="sub-label" for="cfg-clock-size-slider" style="margin-top: 10px;">Clock Font Size (px) <span class="default-val">Default: 14</span></label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-clock-size-slider" min="10" max="48" step="1" aria-label="Clock font size">
+              <input type="number" id="cfg-clock-size-num" class="set-input num-input" aria-label="Clock font size number">
+            </div>
+            <label class="sub-label" for="cfg-clock-x-slider" style="margin-top: 10px;">Clock Position X (px)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-clock-x-slider" min="-500" max="500" step="10" aria-label="Clock position X">
+              <input type="number" id="cfg-clock-x-num" class="set-input num-input" aria-label="Clock position X number">
+            </div>
+            <label class="sub-label" for="cfg-clock-y-slider" style="margin-top: 10px;">Clock Position Y (px)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-clock-y-slider" min="-500" max="500" step="10" aria-label="Clock position Y">
+              <input type="number" id="cfg-clock-y-num" class="set-input num-input" aria-label="Clock position Y number">
+            </div>
+            <label class="sub-label" for="cfg-date-position" style="margin-top: 10px;">Date Position</label>
+            <select class="set-input" id="cfg-date-position">
+              <option value="top">Above Time</option>
+              <option value="bottom">Below Time</option>
+              <option value="left">Left of Time</option>
+              <option value="right">Right of Time</option>
+              <option value="hidden">Hidden</option>
+            </select>
+            <label class="sub-label" for="cfg-date-format" style="margin-top: 10px;">Date Format</label>
+            <select class="set-input" id="cfg-date-format">
+              <option value="short">Short (Mon, Jan 15)</option>
+              <option value="long">Long (Monday, January 15, 2024)</option>
+              <option value="numeric">Numeric (01/15/2024)</option>
+              <option value="iso">ISO (2024-01-15)</option>
+              <option value="full">Full (Monday, Jan 15)</option>
+            </select>
+            <label class="checkbox-wrap" style="margin-top: 10px;">
+              <input type="checkbox" id="cfg-show-seconds"> Show Seconds
+            </label>
+            <label class="checkbox-wrap" style="margin-top: 8px;">
+              <input type="checkbox" id="cfg-clock-24h"> 24 Hour Format
+            </label>
+            <label class="sub-label" for="cfg-clock-tz" style="margin-top: 10px;">Timezone</label>
+            <input type="text" class="set-input" id="cfg-clock-tz" placeholder="Auto (System Time)">
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item" open>
+        <summary class="accordion-summary">Background</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label class="sub-label">Wallpaper Presets & Feeds</label>
+            <div class="wallpaper-presets-grid">
+              <button class="action-btn secondary wallpaper-preset-btn" data-source="stalenhag">Simon Stålenhag</button>
+              <button class="action-btn secondary wallpaper-preset-btn" data-source="nature">Earth & Nature</button>
+              <button class="action-btn secondary wallpaper-preset-btn" data-source="bing">Bing POTD</button>
+              <button class="action-btn secondary wallpaper-preset-btn" data-source="wikimedia">Wikimedia POTD</button>
+            </div>
+            
+            <label class="custom-file-upload" for="cfg-bg-upload">
+              <span id="upload-btn-text">Upload Background Image</span>
+            </label>
+            <input type="file" id="cfg-bg-upload" accept="image/*">
+            <span class="file-name" id="file-name-display" style="display: none;"></span>
+            <label class="sub-label" for="cfg-bg-brightness-slider" style="margin-top: 10px;">Background Brightness</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-bg-brightness-slider" min="10" max="100" step="5" aria-label="Background brightness">
+              <input type="number" id="cfg-bg-brightness-num" class="set-input num-input">
+            </div>
+            <label class="sub-label" for="cfg-bg-blur-slider" style="margin-top: 10px;">Background Blur</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-bg-blur-slider" min="0" max="20" step="1" aria-label="Background blur">
+              <input type="number" id="cfg-bg-blur-num" class="set-input num-input">
+            </div>
+            <button class="action-btn secondary" id="cfg-bg-clear" style="margin-top: 8px;">Clear Background Image</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
         <summary class="accordion-summary">Themes & Fonts</summary>
         <div class="accordion-content">
           <div class="control-group">
-            <select class="set-input" id="cfg-theme-preset">
+            <select class="set-input" id="cfg-theme-preset" aria-label="Theme preset">
               <option value="custom">Custom</option>
               <option value="gruvbox">Gruvbox (Original)</option>
               <option value="original">Original Dark</option>
@@ -800,14 +1631,25 @@ select.set-input { cursor: pointer; background: var(--bg); }
               <option value="mono">Monochrome (Black/White)</option>
             </select>
             <button class="action-btn secondary" id="save-custom-theme" style="margin-top: 0;">Save Current as Custom Theme</button>
-            
-            <label class="sub-label" style="margin-top: 10px;">Font Family</label>
-            <select class="set-input" id="cfg-font-family">
-              <option value="'Open Sans', sans-serif">Open Sans (Qwant Default)</option>
+            <label class="sub-label" for="cfg-font-family" style="margin-top: 10px;">Font Family</label>
+            <select class="set-input" id="cfg-font-family" aria-label="Font family">
+              <option value="'Open Sans', sans-serif">Open Sans (Default)</option>
               <option value="'Inter', sans-serif">Inter</option>
               <option value="'Roboto', sans-serif">Roboto</option>
+              <option value="'Lato', sans-serif">Lato</option>
+              <option value="'Montserrat', sans-serif">Montserrat</option>
+              <option value="'Poppins', sans-serif">Poppins</option>
+              <option value="'Raleway', sans-serif">Raleway</option>
+              <option value="'Nunito', sans-serif">Nunito</option>
+              <option value="'Ubuntu', sans-serif">Ubuntu</option>
+              <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+              <option value="'Oswald', sans-serif">Oswald (Condensed)</option>
               <option value="system-ui, sans-serif">System UI</option>
               <option value="'Fira Code', monospace">Fira Code (Mono)</option>
+              <option value="'Source Code Pro', monospace">Source Code Pro (Mono)</option>
+              <option value="'JetBrains Mono', monospace">JetBrains Mono (Mono)</option>
+              <option value="'Playfair Display', serif">Playfair Display (Serif)</option>
+              <option value="'Merriweather', serif">Merriweather (Serif)</option>
             </select>
           </div>
         </div>
@@ -819,25 +1661,22 @@ select.set-input { cursor: pointer; background: var(--bg); }
           <div class="control-group">
             <div class="color-picker-wrap">
               <div class="color-picker">
-                <input type="color" id="cfg-bg"> <span>BG</span>
+                <input type="color" id="cfg-bg" aria-label="Background color"> <span>BG</span>
               </div>
               <div class="color-picker">
-                <input type="color" id="cfg-fg"> <span>FG</span>
+                <input type="color" id="cfg-fg" aria-label="Foreground color"> <span>FG</span>
               </div>
             </div>
-            
             <label class="checkbox-wrap" style="margin-top: 10px;">
               <input type="checkbox" id="cfg-grad-toggle"> Enable Background Gradient
             </label>
-            
             <div id="gradient-controls" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px;">
-              <label class="sub-label">Gradient Type</label>
+              <label class="sub-label" for="cfg-grad-type">Gradient Type</label>
               <select class="set-input" id="cfg-grad-type">
                 <option value="linear">Linear</option>
                 <option value="radial">Radial</option>
                 <option value="conic">Conic</option>
               </select>
-              
               <div class="color-picker-wrap">
                 <div class="color-picker">
                   <input type="color" id="cfg-grad1"> <span>C1</span>
@@ -849,9 +1688,8 @@ select.set-input { cursor: pointer; background: var(--bg); }
                   <input type="color" id="cfg-grad3"> <span>C3</span>
                 </div>
               </div>
-              
               <div>
-                <label class="sub-label">Gradient Angle (deg) <span class="default-val">Default: 45</span></label>
+                <label class="sub-label" for="cfg-grad-angle-slider">Gradient Angle (deg)</label>
                 <div class="range-wrap">
                   <input type="range" id="cfg-grad-angle-slider" min="0" max="360" step="5">
                   <input type="number" id="cfg-grad-angle-num" class="set-input num-input">
@@ -866,14 +1704,14 @@ select.set-input { cursor: pointer; background: var(--bg); }
         <summary class="accordion-summary">Weather Widget</summary>
         <div class="accordion-content">
           <div class="control-group">
-            <label class="checkbox-wrap">
+            <label class="checkbox-wrap" for="cfg-weather-toggle">
               <input type="checkbox" id="cfg-weather-toggle"> Show Weather Widget
             </label>
             <div class="autocomplete-wrap" style="margin-top: 8px;">
               <input type="text" class="set-input" id="cfg-weather-loc" placeholder="Search city (e.g. London)">
-              <div class="autocomplete-dropdown" id="weather-autocomplete"></div>
+              <div class="autocomplete-dropdown" id="weather-autocomplete" role="listbox"></div>
             </div>
-            <span class="sub-label" style="margin-top: 4px;">Leave empty to use browser GPS location. Data by Open-Meteo.</span>
+            <span class="sub-label" style="margin-top: 4px;">Leave empty to use browser GPS location.</span>
           </div>
         </div>
       </details>
@@ -882,29 +1720,41 @@ select.set-input { cursor: pointer; background: var(--bg); }
         <summary class="accordion-summary">Grid & Layout</summary>
         <div class="accordion-content">
           <div class="control-group">
-            <label class="sub-label">Grid Columns <span class="default-val">Default: 4</span></label>
+            <label class="sub-label" for="cfg-columns-slider">Grid Columns</label>
             <div class="range-wrap">
               <input type="range" id="cfg-columns-slider" min="2" max="12" step="1">
               <input type="number" id="cfg-columns-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Grid Gap / Distance (px) <span class="default-val">Default: 50</span></label>
+            <label class="sub-label" for="cfg-grid-gap-slider" style="margin-top: 10px;">Grid Gap (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-grid-gap-slider" min="0" max="200" step="5">
               <input type="number" id="cfg-grid-gap-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Layout Position - X Axis (px) <span class="default-val">Default: 0</span></label>
+            <label class="sub-label" for="cfg-pos-x-slider" style="margin-top: 10px;">Position X (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-pos-x-slider" min="-400" max="400" step="10">
               <input type="number" id="cfg-pos-x-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Layout Position - Y Axis (px) <span class="default-val">Default: 0</span></label>
+            <label class="sub-label" for="cfg-pos-y-slider" style="margin-top: 10px;">Position Y (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-pos-y-slider" min="-400" max="400" step="10">
               <input type="number" id="cfg-pos-y-num" class="set-input num-input">
             </div>
+            <button class="action-btn secondary" id="reset-layout-btn" style="margin-top: 10px;">Reset Layout Positions</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
+        <summary class="accordion-summary">Custom Buttons</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label class="checkbox-wrap" for="cfg-github-btn">
+              <input type="checkbox" id="cfg-github-btn"> Show GitHub Button
+            </label>
+            <span class="sub-label" style="margin-top: 12px; font-weight: bold;">Custom Floating Buttons</span>
+            <div id="custom-buttons-list" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"></div>
+            <button class="action-btn secondary" id="add-custom-btn" style="margin-top: 8px;">+ Add Custom Button</button>
           </div>
         </div>
       </details>
@@ -913,17 +1763,17 @@ select.set-input { cursor: pointer; background: var(--bg); }
         <summary class="accordion-summary">Misc & Toggles</summary>
         <div class="accordion-content">
           <div class="control-group" style="gap: 12px;">
-            <label class="checkbox-wrap">
+            <label class="checkbox-wrap" for="cfg-engines">
               <input type="checkbox" id="cfg-engines"> Show Search Engine Buttons
             </label>
-            <label class="checkbox-wrap">
+            <label class="checkbox-wrap" for="cfg-credits">
               <input type="checkbox" id="cfg-credits"> Show Credits Link
             </label>
-            <label class="checkbox-wrap">
+            <label class="checkbox-wrap" for="cfg-center-btn-toggle">
               <input type="checkbox" id="cfg-center-btn-toggle"> Enable Center Button
             </label>
-            <input type="text" class="set-input" id="cfg-center-btn-text" placeholder="Button Text (e.g. Launch)" style="margin-top: 8px;">
-            <input type="text" class="set-input" id="cfg-center-btn-url" placeholder="Button URL (https://...)" style="margin-top: 8px;">
+            <input type="text" class="set-input" id="cfg-center-btn-text" placeholder="Button Text" style="margin-top: 8px;">
+            <input type="text" class="set-input" id="cfg-center-btn-url" placeholder="Button URL" style="margin-top: 8px;">
             <input type="text" class="set-input" id="cfg-center-btn-img" placeholder="Icon URL (Optional)" style="margin-top: 8px;">
           </div>
         </div>
@@ -932,15 +1782,33 @@ select.set-input { cursor: pointer; background: var(--bg); }
       <button class="action-btn" id="btn-revert" style="margin-top: 30px; border-color: #ff4444; color: #ff4444;">Revert to Original Config</button>
     </div>
 
-    <!-- Advanced Tab -->
-    <div class="tab-content" id="tab-advanced">
-      
+    <div class="tab-content" id="tab-advanced" role="tabpanel">
       <details class="accordion-item" open>
+        <summary class="accordion-summary">Language & Accessibility</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <label class="sub-label" for="cfg-language">Language</label>
+            <select class="set-input" id="cfg-language">
+              <option value="en">English</option>
+              <option value="es">Español (Spanish)</option>
+              <option value="fr">Français (French)</option>
+              <option value="de">Deutsch (German)</option>
+            </select>
+            <label class="sub-label" for="cfg-ui-scale-slider" style="margin-top: 10px;">UI Scale (%)</label>
+            <div class="range-wrap">
+              <input type="range" id="cfg-ui-scale-slider" min="80" max="150" step="5">
+              <input type="number" id="cfg-ui-scale-num" class="set-input num-input">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item">
         <summary class="accordion-summary">Taskbar Customization</summary>
         <div class="accordion-content">
           <div class="control-group">
-            <label>Search Bar UI</label>
-            <input type="text" class="set-input" id="cfg-search-text" placeholder="Search bar placeholder text">
+            <label class="sub-label" for="cfg-search-text">Search Bar Placeholder</label>
+            <input type="text" class="set-input" id="cfg-search-text" placeholder="Search bar text">
             <div class="color-picker-wrap" style="margin-top: 8px;">
               <div class="color-picker">
                 <input type="color" id="cfg-search-bg"> <span>BG</span>
@@ -960,61 +1828,53 @@ select.set-input { cursor: pointer; background: var(--bg); }
         <summary class="accordion-summary">Dimensions & Animations</summary>
         <div class="accordion-content">
           <div class="control-group">
-            <label class="checkbox-wrap">
+            <label class="checkbox-wrap" for="cfg-anim-toggle">
               <input type="checkbox" id="cfg-anim-toggle"> Enable Hover Animations
             </label>
             <div id="anim-controls" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-              <label class="sub-label">Animation Lift Height (px) <span class="default-val">Default: 4</span></label>
+              <label class="sub-label" for="cfg-anim-height-slider">Animation Lift Height (px)</label>
               <div class="range-wrap">
                 <input type="range" id="cfg-anim-height-slider" min="0" max="20" step="1">
                 <input type="number" id="cfg-anim-height-num" class="set-input num-input">
               </div>
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Sharpness / Border Radius (px) <span class="default-val">Default: 16</span></label>
+            <label class="sub-label" for="cfg-radius-slider" style="margin-top: 10px;">Border Radius (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-radius-slider" min="0" max="100" step="1">
               <input type="number" id="cfg-radius-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Label Position</label>
+            <label class="sub-label" for="cfg-label-pos" style="margin-top: 10px;">Label Position</label>
             <select class="set-input" id="cfg-label-pos">
               <option value="column">Bottom (Default)</option>
               <option value="column-reverse">Top</option>
               <option value="hidden">Hidden</option>
             </select>
-            
-            <label class="sub-label" style="margin-top: 10px;">Label Font Size (px) <span class="default-val">Default: 11</span></label>
+            <label class="sub-label" for="cfg-label-size-slider" style="margin-top: 10px;">Label Font Size (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-label-size-slider" min="8" max="20" step="1">
               <input type="number" id="cfg-label-size-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Width - X Axis (px) <span class="default-val">Default: 560</span></label>
+            <label class="sub-label" for="cfg-search-width-slider" style="margin-top: 10px;">Search Width (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-search-width-slider" min="300" max="1200" step="10">
               <input type="number" id="cfg-search-width-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Height / Thickness - Y Axis (px) <span class="default-val">Default: 16</span></label>
+            <label class="sub-label" for="cfg-search-y-slider" style="margin-top: 10px;">Search Height (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-search-y-slider" min="8" max="40" step="1">
               <input type="number" id="cfg-search-y-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Depth / Elevation - Z Axis (px) <span class="default-val">Default: 15</span></label>
+            <label class="sub-label" for="cfg-search-z-slider" style="margin-top: 10px;">Search Depth (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-search-z-slider" min="0" max="50" step="1">
               <input type="number" id="cfg-search-z-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Tile Box Size (px) <span class="default-val">Default: 72</span></label>
+            <label class="sub-label" for="cfg-tile-size-slider" style="margin-top: 10px;">Tile Size (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-tile-size-slider" min="40" max="120" step="2">
               <input type="number" id="cfg-tile-size-num" class="set-input num-input">
             </div>
-
-            <label class="sub-label" style="margin-top: 10px;">Favicon / Icon Size (px) <span class="default-val">Default: 36</span></label>
+            <label class="sub-label" for="cfg-icon-size-slider" style="margin-top: 10px;">Icon Size (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-icon-size-slider" min="16" max="80" step="2">
               <input type="number" id="cfg-icon-size-num" class="set-input num-input">
@@ -1038,41 +1898,67 @@ select.set-input { cursor: pointer; background: var(--bg); }
         <div class="accordion-content">
           <div class="control-group">
             <div class="shadcn-input-group">
-              <textarea class="set-input" id="cfg-io-area" placeholder="Export your config to save it, or paste someone else's config here to import it."></textarea>
-              <button class="shadcn-copy-btn" id="btn-copy" title="Copy to clipboard">
-                <svg id="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                <span id="copy-text">Copy</span>
+              <textarea class="set-input" id="cfg-io-area" placeholder="Export/import config here"></textarea>
+              <button class="shadcn-copy-btn" id="btn-copy" title="Copy">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copy</span>
               </button>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;">
-              <button class="action-btn secondary" id="btn-export" style="margin-top: 0;">Export Config</button>
-              <button class="action-btn secondary" id="btn-import" style="margin-top: 0;">Import Config</button>
+              <button class="action-btn secondary" id="btn-export" style="margin-top: 0;">Export</button>
+              <button class="action-btn secondary" id="btn-import" style="margin-top: 0;">Import</button>
             </div>
           </div>
         </div>
       </details>
 
+      <details class="accordion-item">
+        <summary class="accordion-summary">Offline & Cache</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <span class="sub-label">DesignT works offline automatically. Your settings, shortcuts, and themes are stored locally.</span>
+            <button class="action-btn secondary" id="cache-resources-btn" style="margin-top: 8px;">Pre-cache Fonts & Icons</button>
+            <button class="action-btn secondary" id="clear-cache-btn" style="margin-top: 8px; border-color: #ff4444; color: #ff4444;">Clear All Cache</button>
+            <span class="sub-label" id="cache-status" style="margin-top: 8px;">Status: Not cached</span>
+          </div>
+        </div>
+      </details>
     </div>
 
-    <!-- Custom Widget Tab -->
-    <div class="tab-content" id="tab-custom">
+    <div class="tab-content" id="tab-custom" role="tabpanel">
       <div class="control-group">
         <label>Custom Widget Coding</label>
-        <span class="sub-label">Write or paste raw HTML, CSS, and JS. The widget will render in the top left corner.</span>
-        <label class="checkbox-wrap" style="margin-top: 8px;">
+        <span class="sub-label">Write raw HTML, CSS, and JS. Renders in top left corner.</span>
+        <label class="checkbox-wrap" style="margin-top: 8px;" for="cfg-custom-widget-toggle">
           <input type="checkbox" id="cfg-custom-widget-toggle"> Enable Custom Widget
         </label>
-        <textarea class="set-input code-input" id="cfg-custom-widget-code" placeholder="<!-- Enter HTML/CSS/JS here --><div style='color: var(--fg); font-size: 24px;'>Hello DesignT!</div>"></textarea>
+        <textarea class="set-input code-input" id="cfg-custom-widget-code" placeholder="<!-- Enter HTML/CSS/JS here -->"></textarea>
         <button class="action-btn secondary" id="run-custom-widget" style="margin-top: 8px;">Run / Refresh Widget</button>
       </div>
     </div>
 
     <button class="action-btn primary" id="save-settings">Save & Close</button>
   </div>
-</div>
+</aside>
+
+<div class="toast-container" id="toast-container"></div>
 
 <script>
-// --- Config & Data ---
+// --- Toast System ---
+function showToast(message, duration = 3000) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// --- Default Data ---
 const defaultShortcuts = [
   { name: 'GitHub', url: 'https://github.com', letter: 'GH', imgUrl: '' },
   { name: 'Reddit', url: 'https://reddit.com', letter: 'R', imgUrl: '' },
@@ -1096,9 +1982,28 @@ const themes = {
   mono: { bg: '#000000', fg: '#ffffff' }
 };
 
+// Curated Static Presets
+const stalenhagImages = [
+  'https://www.simonstalenhag.se/bilderbig/scan_0001_15.jpg',
+  'https://www.simonstalenhag.se/bilderbig/scan_0002_16.jpg',
+  'https://www.simonstalenhag.se/bilderbig/scan_0004_16.jpg',
+  'https://www.simonstalenhag.se/bilderbig/scan_0010_16.jpg',
+  'https://www.simonstalenhag.se/bilderbig/scan_0028_16.jpg'
+];
+
+const natureImages = [
+  'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=80',
+  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80',
+  'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=1920&q=80',
+  'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=1920&q=80',
+  'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=1920&q=80'
+];
+
 const defaultConfig = {
-  bg: '#282828', // Gruvbox Default
-  fg: '#ebdbb2', // Gruvbox Default
+  lang: 'en',
+  uiScale: 100,
+  bg: '#282828',
+  fg: '#ebdbb2',
   columns: 4,
   searchWidth: 560,
   searchY: 16,
@@ -1109,6 +2014,14 @@ const defaultConfig = {
   posY: 0,
   showEngines: true,
   showCredits: true,
+  showGithubBtn: true,
+  showFocusNote: false,
+  showPomodoro: false,
+  showGreeting: true,
+  focusNoteText: '',
+  focusDuration: 25,
+  focusAccent: '#fabd2f',
+  customButtons: [],
   themePreset: 'gruvbox',
   tileSize: 72,
   iconSize: 36,
@@ -1128,6 +2041,9 @@ const defaultConfig = {
   bgGrad3: '#1a1a1a',
   bgGradAngle: 45,
   bgImage: '',
+  bgImageBrightness: 100,
+  bgImageBlur: 0,
+  wallpaperSource: '', // Tracks which preset is currently used
   engines: defaultEngines,
   searchText: 'Search or enter address',
   searchBg: '',
@@ -1137,8 +2053,20 @@ const defaultConfig = {
   weatherLoc: '',
   weatherLat: '',
   weatherLon: '',
+  weatherX: null,
+  weatherY: 20,
+  weatherRight: 20,
+  weatherW: 170,
+  weatherFS: 13,
   clockSize: 14,
   clockTz: '',
+  clockStyle: 'minimal',
+  clockX: 0,
+  clockY: 0,
+  datePosition: 'bottom',
+  dateFormat: 'short',
+  showSeconds: false,
+  clock24h: true,
   useCustomWidget: false,
   customWidgetCode: '<div style="color: var(--fg); font-size: 24px; font-weight: bold;">DesignT</div>'
 };
@@ -1146,37 +2074,690 @@ const defaultConfig = {
 // State
 let shortcuts = JSON.parse(localStorage.getItem('start-shortcuts')) || [...defaultShortcuts];
 let config = { ...defaultConfig, ...(JSON.parse(localStorage.getItem('start-config')) || {}) };
+if (!config.customButtons) config.customButtons = [];
+if (config.showGithubBtn === undefined) config.showGithubBtn = true;
+if (!config.lang) config.lang = 'en';
+if (!config.uiScale) config.uiScale = 100;
+if (config.showFocusNote === undefined) config.showFocusNote = false;
+if (config.showPomodoro === undefined) config.showPomodoro = false;
+if (config.showGreeting === undefined) config.showGreeting = true;
+if (!config.focusDuration) config.focusDuration = 25;
+if (!config.focusAccent) config.focusAccent = '#fabd2f';
+if (!config.wallpaperSource) config.wallpaperSource = '';
 let customThemes = JSON.parse(localStorage.getItem('start-custom-themes')) || {};
 let currentEngineIdx = 0;
+let globalWeatherData = null;
+let isOffline = !navigator.onLine;
 
 // DOM Elements
 const enginesDiv = document.getElementById('engines');
 const searchForm = document.getElementById('search-form');
 const searchInput = document.getElementById('search-input');
+const searchSuggestions = document.getElementById('search-suggestions');
 const grid = document.getElementById('grid');
 const creditsEl = document.getElementById('credits');
 const rootStyle = document.documentElement.style;
 const body = document.body;
 const weatherWidget = document.getElementById('weather-widget');
 const customWidgetContainer = document.getElementById('custom-widget-container');
-
+const clockContainer = document.getElementById('clock-container');
+const focusNoteWrap = document.getElementById('focus-note-wrap');
+const focusNoteInput = document.getElementById('focus-note');
 const centerBtnWrap = document.getElementById('center-btn-wrap');
 const centerBtn = document.getElementById('center-btn');
 const centerBtnText = document.getElementById('center-btn-text');
+const githubLink = document.getElementById('github-link');
+const floatingBtnGroup = document.getElementById('floating-btn-group');
+const greetingEl = document.getElementById('greeting');
+const pomodoroWrap = document.getElementById('pomodoro-wrap');
+const focusToggleBtn = document.getElementById('focus-toggle-btn');
+const offlineIndicator = document.getElementById('offline-indicator');
 
-// --- Initialization ---
+// --- Mobile Touch Fix ---
+let touchMoved = false;
+document.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true, capture: true });
+document.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true, capture: true });
+
+// =========================================
+// OFFLINE SUPPORT & SERVICE WORKER
+// =========================================
+const OFFLINE_CACHE = 'designt-cache-v1';
+const CACHEABLE_RESOURCES = [
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Open+Sans:wght@400;700&family=Roboto:wght@400;700&family=Fira+Code&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Source+Code+Pro:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;700&family=Space+Grotesk:wght@400;700&family=Nunito:wght@400;700&family=Ubuntu:wght@400;700&display=swap',
+  'https://icons.duckduckgo.com/ip3/github.com.ico'
+];
+
+// Register inline service worker for offline support
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  
+  const swCode = `
+    const CACHE_NAME = '${OFFLINE_CACHE}';
+    const CACHEABLE = ${JSON.stringify(CACHEABLE_RESOURCES)};
+    
+    self.addEventListener('install', (e) => {
+      self.skipWaiting();
+      e.waitUntil(
+        caches.open(CACHE_NAME).then(cache => 
+          Promise.allSettled(CACHEABLE.map(url => cache.add(url)))
+        )
+      );
+    });
+    
+    self.addEventListener('activate', (e) => {
+      e.waitUntil(
+        caches.keys().then(keys => 
+          Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+        )
+      );
+      self.clients.claim();
+    });
+    
+    self.addEventListener('fetch', (e) => {
+      if (e.request.method !== 'GET') return;
+      e.respondWith(
+        caches.match(e.request).then(cached => {
+          const fetchPromise = fetch(e.request).then(resp => {
+            if (resp && resp.status === 200 && (resp.type === 'basic' || resp.type === 'cors')) {
+              const clone = resp.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+            }
+            return resp;
+          }).catch(() => cached);
+          return cached || fetchPromise;
+        })
+      );
+    });
+  `;
+  
+  try {
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+    await navigator.serviceWorker.register(swUrl);
+    console.log('Service Worker registered for offline support');
+  } catch (err) {
+    console.log('SW registration skipped:', err.message);
+  }
+}
+
+// Pre-cache resources using Cache API directly
+async function precacheResources() {
+  if (!('caches' in window)) {
+    showToast('Cache API not supported');
+    return;
+  }
+  try {
+    const cache = await caches.open(OFFLINE_CACHE);
+    await Promise.allSettled(CACHEABLE_RESOURCES.map(url => cache.add(url)));
+    // Also cache favicon icons for shortcuts
+    shortcuts.forEach(s => {
+      const iconUrl = s.imgUrl || getFaviconUrl(s.url);
+      if (iconUrl) cache.add(iconUrl).catch(() => {});
+    });
+    updateCacheStatus();
+    showToast('Resources cached for offline use!');
+  } catch (err) {
+    showToast('Cache failed: ' + err.message);
+  }
+}
+
+async function clearCache() {
+  if (!('caches' in window)) return;
+  const keys = await caches.keys();
+  await Promise.all(keys.map(k => caches.delete(k)));
+  updateCacheStatus();
+  showToast('All cache cleared!');
+}
+
+async function updateCacheStatus() {
+  const statusEl = document.getElementById('cache-status');
+  if (!statusEl || !('caches' in window)) return;
+  const keys = await caches.keys();
+  if (keys.length > 0) {
+    const cache = await caches.open(keys[0]);
+    const requests = await cache.keys();
+    statusEl.textContent = `Status: Cached (${requests.length} resources)`;
+    statusEl.style.color = '#4ade80';
+  } else {
+    statusEl.textContent = 'Status: Not cached';
+    statusEl.style.color = '';
+  }
+}
+
+// Offline indicator
+function updateOfflineStatus() {
+  isOffline = !navigator.onLine;
+  if (isOffline) {
+    offlineIndicator.classList.add('show');
+  } else {
+    offlineIndicator.classList.remove('show');
+  }
+}
+
+window.addEventListener('online', () => {
+  updateOfflineStatus();
+  showToast('Back online!');
+  if (config.showWeather) fetchWeather();
+});
+window.addEventListener('offline', () => {
+  updateOfflineStatus();
+  showToast('Offline mode active');
+});
+
+// =========================================
+// FOCUS MODE LOGIC
+// =========================================
+function toggleFocusMode() {
+  body.classList.toggle('focus-mode');
+  const isOn = body.classList.contains('focus-mode');
+  localStorage.setItem('start-focus-mode', isOn ? 'true' : 'false');
+  
+  if (isOn) {
+    // Auto-show focus note when entering focus mode
+    if (!config.showFocusNote) {
+      config.showFocusNote = true;
+      focusNoteWrap.classList.add('active');
+      const toggle = document.getElementById('cfg-focus-note-toggle');
+      if (toggle) toggle.checked = true;
+      saveData();
+    }
+    // Show pomodoro if enabled
+    if (config.showPomodoro) {
+      pomodoroWrap.classList.add('active');
+    }
+    // Focus the note input
+    setTimeout(() => focusNoteInput.focus(), 400);
+    showToast('Focus Mode On');
+  } else {
+    pomodoroWrap.classList.remove('active');
+    pausePomodoro();
+    showToast('Focus Mode Off');
+  }
+}
+
+focusToggleBtn.addEventListener('click', toggleFocusMode);
+
+// Restore focus mode state
+if (localStorage.getItem('start-focus-mode') === 'true') {
+  body.classList.add('focus-mode');
+}
+
+// =========================================
+// GREETING MESSAGE
+// =========================================
+function updateGreeting() {
+  if (!config.showGreeting) {
+    greetingEl.classList.remove('active');
+    return;
+  }
+  const hour = new Date().getHours();
+  let greet = 'Good Evening';
+  if (hour < 5) greet = 'Good Night';
+  else if (hour < 12) greet = 'Good Morning';
+  else if (hour < 17) greet = 'Good Afternoon';
+  else if (hour < 21) greet = 'Good Evening';
+  else greet = 'Good Night';
+  greetingEl.textContent = greet;
+  greetingEl.classList.add('active');
+}
+
+// =========================================
+// POMODORO TIMER
+// =========================================
+let pomodoroTime = config.focusDuration * 60;
+let pomodoroTotal = config.focusDuration * 60;
+let pomodoroInterval = null;
+let pomodoroIsBreak = false;
+let pomodoroSessionCount = 0;
+
+const pomodoroTimerEl = document.getElementById('pomodoro-timer');
+const pomodoroModeLabel = document.getElementById('pomodoro-mode-label');
+
+function formatPomodoroTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function updatePomodoroDisplay() {
+  pomodoroTimerEl.textContent = formatPomodoroTime(pomodoroTime);
+  pomodoroModeLabel.textContent = pomodoroIsBreak 
+    ? `Break Time (Session ${pomodoroSessionCount + 1})` 
+    : `Work Session ${pomodoroSessionCount + 1}`;
+}
+
+function startPomodoro() {
+  if (pomodoroInterval) return;
+  pomodoroInterval = setInterval(() => {
+    pomodoroTime--;
+    if (pomodoroTime <= 0) {
+      // Session complete
+      if (!pomodoroIsBreak) {
+        pomodoroSessionCount++;
+        // Every 4 sessions, take a longer break
+        if (pomodoroSessionCount % 4 === 0) {
+          pomodoroTime = 15 * 60;
+          showToast('Time for a 15-minute break!');
+        } else {
+          pomodoroTime = 5 * 60;
+          showToast('Break time! 5 minutes');
+        }
+        pomodoroIsBreak = true;
+      } else {
+        pomodoroTime = config.focusDuration * 60;
+        pomodoroIsBreak = false;
+        showToast('Back to work!');
+      }
+      // Play a subtle notification sound
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 800;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      } catch(e) {}
+    }
+    updatePomodoroDisplay();
+  }, 1000);
+}
+
+function pausePomodoro() {
+  if (pomodoroInterval) {
+    clearInterval(pomodoroInterval);
+    pomodoroInterval = null;
+  }
+}
+
+function resetPomodoro() {
+  pausePomodoro();
+  pomodoroIsBreak = false;
+  pomodoroTime = config.focusDuration * 60;
+  pomodoroTotal = pomodoroTime;
+  updatePomodoroDisplay();
+}
+
+function skipPomodoro() {
+  pomodoroTime = 1;
+}
+
+document.getElementById('pomodoro-start').addEventListener('click', startPomodoro);
+document.getElementById('pomodoro-pause').addEventListener('click', pausePomodoro);
+document.getElementById('pomodoro-reset').addEventListener('click', resetPomodoro);
+document.getElementById('pomodoro-skip').addEventListener('click', skipPomodoro);
+
+// Initialize pomodoro
+pomodoroTime = config.focusDuration * 60;
+pomodoroTotal = pomodoroTime;
+updatePomodoroDisplay();
+
+// =========================================
+// WALLPAPER PRESETS LOGIC
+// =========================================
+async function fetchBingPOTD() {
+  const res = await fetch('https://bing.biturl.top/?resolution=1920&format=json&index=0&mkt=en-US');
+  const data = await res.json();
+  if (data.url) return 'https://bing.com' + data.url;
+  throw new Error("Bing fetch failed");
+}
+
+async function fetchWikimediaPOTD() {
+  const date = new Date();
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&generator=images&titles=Template:Potd/${yyyy}-${mm}-${dd}&iiprop=url&iiurlwidth=1920&formatversion=2&origin=*`;
+  const res = await fetch(apiUrl);
+  const data = await res.json();
+  if (data.query && data.query.pages && data.query.pages[0]) {
+    const page = data.query.pages[0];
+    if (page.imageinfo && page.imageinfo[0] && page.imageinfo[0].thumburl) {
+      return page.imageinfo[0].thumburl;
+    }
+  }
+  throw new Error("Wikimedia fetch failed");
+}
+
+async function applyWallpaperPreset(source) {
+  if (isOffline && (source === 'bing' || source === 'wikimedia')) {
+    showToast('Offline: Cannot fetch feed');
+    return;
+  }
+  
+  // Visual loading state
+  const buttons = document.querySelectorAll('.wallpaper-preset-btn');
+  buttons.forEach(b => b.classList.add('wallpaper-preset-loading'));
+  
+  let url = '';
+  try {
+    if (source === 'stalenhag') {
+      url = stalenhagImages[Math.floor(Math.random() * stalenhagImages.length)];
+    } else if (source === 'nature') {
+      url = natureImages[Math.floor(Math.random() * natureImages.length)];
+    } else if (source === 'bing') {
+      showToast('Fetching Bing POTD...');
+      url = await fetchBingPOTD();
+    } else if (source === 'wikimedia') {
+      showToast('Fetching Wikimedia POTD...');
+      url = await fetchWikimediaPOTD();
+    }
+    
+    if (url) {
+      config.bgImage = url;
+      config.wallpaperSource = source;
+      applyConfig();
+      saveData();
+      populateSettings(); // Update UI text
+      showToast('Wallpaper updated!');
+    } else {
+      throw new Error("No URL returned");
+    }
+  } catch (err) {
+    showToast('Failed to load wallpaper');
+    console.error(err);
+  } finally {
+    buttons.forEach(b => b.classList.remove('wallpaper-preset-loading'));
+  }
+}
+
+// =========================================
+// INITIALIZATION
+// =========================================
 function init() {
   applyConfig();
   renderGrid();
   renderEngines();
   renderCustomWidget();
+  renderCustomButtons();
+  renderClockStructure();
   updateClock();
+  updateGreeting();
   setInterval(updateClock, 1000);
+  setInterval(updateGreeting, 60000); // Update greeting every minute
   bindControls();
-  if (config.showWeather) fetchWeather();
+  bindWeatherUI();
+  bindZenMode();
+  bindKeyboardShortcuts();
+  bindSearchAutocomplete();
+  updateOfflineStatus();
+  updateCacheStatus();
+  registerServiceWorker();
+  
+  window.addEventListener('resize', handleWindowResize);
 }
 
-// --- Layout & Rendering ---
+function handleWindowResize() {
+  if (config.weatherX !== null && config.weatherX !== undefined) {
+    let newX = Math.min(config.weatherX, window.innerWidth - weatherWidget.offsetWidth - 10);
+    let newY = Math.min(config.weatherY, window.innerHeight - weatherWidget.offsetHeight - 10);
+    config.weatherX = Math.max(0, newX);
+    config.weatherY = Math.max(0, newY);
+    rootStyle.setProperty('--weather-x', config.weatherX + 'px');
+    rootStyle.setProperty('--weather-y', config.weatherY + 'px');
+    saveData();
+  }
+}
+
+// --- Zen Mode (double-click) ---
+function bindZenMode() {
+  let lastTouchTime = 0;
+  document.addEventListener('touchend', () => { lastTouchTime = Date.now(); }, { passive: true, capture: true });
+  document.addEventListener('dblclick', (e) => {
+    if (Date.now() - lastTouchTime < 500) return;
+    if (e.target === document.body || e.target.classList.contains('content-wrapper')) {
+      if (!body.classList.contains('focus-mode')) {
+        body.classList.toggle('zen-mode');
+      }
+    }
+  });
+}
+
+// --- Keyboard Shortcuts ---
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Alt + 1-9 for shortcuts
+    if (e.altKey && /^[1-9]$/.test(e.key)) {
+      const idx = parseInt(e.key) - 1;
+      if (shortcuts[idx] && shortcuts[idx].url) {
+        e.preventDefault();
+        window.location.href = shortcuts[idx].url;
+      }
+    }
+    
+    // 'F' to toggle focus mode
+    if (e.key === 'f' || e.key === 'F') {
+      if (document.activeElement !== searchInput && 
+          document.activeElement !== focusNoteInput &&
+          !document.getElementById('sidebar').classList.contains('active') &&
+          document.activeElement?.tagName !== 'INPUT' &&
+          document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        toggleFocusMode();
+      }
+    }
+    
+    // Esc to exit focus mode
+    if (e.key === 'Escape' && body.classList.contains('focus-mode')) {
+      toggleFocusMode();
+    }
+  });
+}
+
+// --- Search Autocomplete ---
+let searchSuggestTimeout;
+let currentSuggestionIdx = -1;
+let currentSuggestions = [];
+
+function bindSearchAutocomplete() {
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchSuggestTimeout);
+    const query = e.target.value.trim();
+    if (query.length < 2 || isOffline) {
+      hideSearchSuggestions();
+      return;
+    }
+    searchSuggestTimeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}&type=list`);
+        const data = await res.json();
+        showSearchSuggestions(data[1] || []);
+      } catch (err) {
+        console.error("Search suggestions failed", err);
+      }
+    }, 200);
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (!searchSuggestions.classList.contains('active')) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      currentSuggestionIdx = Math.min(currentSuggestionIdx + 1, currentSuggestions.length - 1);
+      updateSuggestionHighlight();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      currentSuggestionIdx = Math.max(currentSuggestionIdx - 1, -1);
+      updateSuggestionHighlight();
+    } else if (e.key === 'Enter' && currentSuggestionIdx > -1) {
+      e.preventDefault();
+      searchInput.value = currentSuggestions[currentSuggestionIdx];
+      hideSearchSuggestions();
+      searchForm.submit();
+    } else if (e.key === 'Escape') {
+      hideSearchSuggestions();
+    }
+  });
+
+  searchInput.addEventListener('blur', () => {
+    setTimeout(hideSearchSuggestions, 150);
+  });
+}
+
+function showSearchSuggestions(suggestions) {
+  searchSuggestions.innerHTML = '';
+  currentSuggestions = suggestions;
+  currentSuggestionIdx = -1;
+  if (suggestions.length === 0) { hideSearchSuggestions(); return; }
+  suggestions.forEach((s) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'search-suggestion-item';
+    item.textContent = s;
+    item.setAttribute('role', 'option');
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      searchInput.value = s;
+      hideSearchSuggestions();
+      searchForm.submit();
+    });
+    searchSuggestions.appendChild(item);
+  });
+  searchSuggestions.classList.add('active');
+}
+
+function hideSearchSuggestions() { searchSuggestions.classList.remove('active'); }
+function updateSuggestionHighlight() {
+  const items = searchSuggestions.querySelectorAll('.search-suggestion-item');
+  items.forEach((item, i) => {
+    if (i === currentSuggestionIdx) item.classList.add('highlighted');
+    else item.classList.remove('highlighted');
+  });
+}
+
+// --- Clock ---
+function renderClockStructure() {
+  const style = config.clockStyle || 'minimal';
+  const datePos = config.datePosition || 'bottom';
+  clockContainer.className = `clock-container clock-style-${style} date-${datePos}`;
+  let html = '';
+  switch(style) {
+    case 'minimal': html = '<div class="clock-time" id="clock-time">--:--</div>'; break;
+    case 'withDate': html = '<div class="clock-date" id="clock-date"></div><div class="clock-time" id="clock-time">--:--</div>'; break;
+    case 'vertical': html = '<div class="clock-time" id="clock-time">--:--</div><div class="clock-divider"></div><div class="clock-date" id="clock-date"></div>'; break;
+    case 'feelsLike': html = '<div class="clock-time" id="clock-time">--:--</div><div class="clock-feels" id="clock-feels">Feels like --°</div>'; break;
+    case 'weatherIntegrated': html = '<div class="clock-time" id="clock-time">--:--</div><div class="clock-weather-mini" id="clock-weather-mini"><img id="clock-weather-icon" src="" alt="" style="display:none;"><span id="clock-weather-emoji" class="clock-weather-emoji">🌡️</span><span id="clock-weather-temp">--°</span></div>'; break;
+    case 'analog':
+      html = `<svg class="analog-clock" viewBox="0 0 200 200" role="img" aria-label="Analog clock">
+        <circle cx="100" cy="100" r="95" class="clock-face" />
+        <g id="hour-marks"></g>
+        <line id="hour-hand" x1="100" y1="100" x2="100" y2="55" class="hour-hand" />
+        <line id="minute-hand" x1="100" y1="100" x2="100" y2="35" class="minute-hand" />
+        <line id="second-hand" x1="100" y1="100" x2="100" y2="25" class="second-hand" style="display:none;" />
+        <circle cx="100" cy="100" r="4" class="clock-center" />
+      </svg>
+      <div class="clock-date" id="clock-date"></div>`;
+      break;
+  }
+  clockContainer.innerHTML = html;
+  if (style === 'analog') {
+    generateHourMarks();
+    const secHand = document.getElementById('second-hand');
+    if (secHand) secHand.style.display = config.showSeconds ? '' : 'none';
+  }
+  if (globalWeatherData) {
+    if (style === 'feelsLike') updateClockFeelsLike();
+    if (style === 'weatherIntegrated') updateClockWeather();
+  }
+}
+
+function generateHourMarks() {
+  const marksGroup = document.getElementById('hour-marks');
+  if (!marksGroup) return;
+  let marks = '';
+  for (let i = 1; i <= 12; i++) {
+    const angle = (i * 30) * (Math.PI / 180);
+    const x1 = 100 + 80 * Math.sin(angle);
+    const y1 = 100 - 80 * Math.cos(angle);
+    const x2 = 100 + 90 * Math.sin(angle);
+    const y2 = 100 - 90 * Math.cos(angle);
+    marks += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="hour-mark" />`;
+    const nx = 100 + 68 * Math.sin(angle);
+    const ny = 100 - 68 * Math.cos(angle) + 5;
+    marks += `<text x="${nx}" y="${ny}" text-anchor="middle" class="hour-number">${i}</text>`;
+  }
+  marksGroup.innerHTML = marks;
+}
+
+function formatDate(date, format) {
+  const tz = config.clockTz && config.clockTz.trim() !== '' ? config.clockTz : undefined;
+  switch(format) {
+    case 'long': return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: tz });
+    case 'numeric': return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz });
+    case 'iso': return date.toISOString().split('T')[0];
+    case 'full': return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: tz });
+    case 'short':
+    default: return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
+  }
+}
+
+function formatTime(date) {
+  const options = { hour: '2-digit', minute: '2-digit', hour12: config.clock24h === false ? true : false };
+  if (config.showSeconds) options.second = '2-digit';
+  if (config.clockTz && config.clockTz.trim() !== '') options.timeZone = config.clockTz;
+  return new Intl.DateTimeFormat('en-US', options).format(date);
+}
+
+function updateClock() {
+  const now = new Date();
+  const timeStr = formatTime(now);
+  const timeEl = document.getElementById('clock-time');
+  if (timeEl) timeEl.textContent = timeStr;
+  const dateEl = document.getElementById('clock-date');
+  if (dateEl) dateEl.textContent = formatDate(now, config.dateFormat || 'short');
+  if (config.clockStyle === 'analog') {
+    const hours = now.getHours() % 12;
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    const hourAngle = (hours * 30) + (minutes * 0.5);
+    const minuteAngle = minutes * 6;
+    const secondAngle = seconds * 6;
+    const hourHand = document.getElementById('hour-hand');
+    const minuteHand = document.getElementById('minute-hand');
+    const secondHand = document.getElementById('second-hand');
+    if (hourHand) hourHand.setAttribute('transform', `rotate(${hourAngle} 100 100)`);
+    if (minuteHand) minuteHand.setAttribute('transform', `rotate(${minuteAngle} 100 100)`);
+    if (secondHand) secondHand.setAttribute('transform', `rotate(${secondAngle} 100 100)`);
+  }
+}
+
+function updateClockFeelsLike() {
+  const feelsEl = document.getElementById('clock-feels');
+  if (!feelsEl) return;
+  if (globalWeatherData && globalWeatherData.current) {
+    const apparent = globalWeatherData.current.apparent_temperature;
+    const temp = globalWeatherData.current.temperature_2m;
+    const feelsLike = apparent !== undefined ? apparent : temp;
+    feelsEl.textContent = feelsLike !== undefined ? `Feels like ${Math.round(feelsLike)}°` : 'Feels like --°';
+  } else { feelsEl.textContent = 'Feels like --°'; }
+}
+
+function updateClockWeather() {
+  const iconEl = document.getElementById('clock-weather-icon');
+  const emojiEl = document.getElementById('clock-weather-emoji');
+  const tempEl = document.getElementById('clock-weather-temp');
+  if (!iconEl || !emojiEl || !tempEl) return;
+  if (globalWeatherData && globalWeatherData.current) {
+    const temp = Math.round(globalWeatherData.current.temperature_2m);
+    const code = globalWeatherData.current.weather_code;
+    const isDay = globalWeatherData.current.is_day;
+    tempEl.textContent = `${temp}°`;
+    const iconUrl = mapWeatherIcon(code, isDay);
+    if (iconEl.dataset.src !== iconUrl) { iconEl.src = iconUrl; iconEl.dataset.src = iconUrl; }
+    iconEl.style.display = 'block';
+    emojiEl.style.display = 'none';
+    iconEl.onerror = () => { iconEl.style.display = 'none'; emojiEl.style.display = 'inline'; emojiEl.textContent = mapWeatherEmoji(code); };
+  } else {
+    tempEl.textContent = '--°';
+    iconEl.style.display = 'none';
+    emojiEl.style.display = 'inline';
+    emojiEl.textContent = '🌡️';
+  }
+}
+
+// --- Apply Config ---
 function applyConfig() {
   rootStyle.setProperty('--bg', config.bg);
   rootStyle.setProperty('--fg', config.fg);
@@ -1195,49 +2776,67 @@ function applyConfig() {
   rootStyle.setProperty('--font-family', config.fontFamily);
   rootStyle.setProperty('--anim-height', config.animHeight + 'px');
   rootStyle.setProperty('--clock-size', config.clockSize + 'px');
-  
-  // Search Bar Customization
+  rootStyle.setProperty('--clock-x', (config.clockX || 0) + 'px');
+  rootStyle.setProperty('--clock-y', (config.clockY || 0) + 'px');
+  rootStyle.setProperty('--bg-image', config.bgImage ? `url(${config.bgImage})` : 'none');
+  rootStyle.setProperty('--bg-brightness', (config.bgImageBrightness || 100) + '%');
+  rootStyle.setProperty('--bg-blur', (config.bgImageBlur || 0) + 'px');
+  rootStyle.setProperty('--ui-scale', (config.uiScale || 100) + '%');
+  rootStyle.setProperty('--focus-accent', config.focusAccent || '#fabd2f');
   searchInput.placeholder = config.searchText || 'Search or enter address';
   rootStyle.setProperty('--search-bg', config.searchBg || `color-mix(in srgb, ${config.fg} 5%, ${config.bg})`);
   rootStyle.setProperty('--search-text', config.searchTextColor || config.fg);
   rootStyle.setProperty('--search-border', config.searchBorder || `color-mix(in srgb, ${config.fg} 20%, transparent)`);
-
-  // Background Customization
-  rootStyle.setProperty('--bg-image', config.bgImage ? `url(${config.bgImage})` : 'none');
-
-  // Gradient Customization
   let gradVal = 'none';
   if (config.useGradient) {
-    if (config.bgGradType === 'conic') {
-      gradVal = `conic-gradient(from ${config.bgGradAngle}deg, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
-    } else if (config.bgGradType === 'radial') {
-      gradVal = `radial-gradient(circle, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
-    } else {
-      gradVal = `linear-gradient(${config.bgGradAngle}deg, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
-    }
+    if (config.bgGradType === 'conic') gradVal = `conic-gradient(from ${config.bgGradAngle}deg, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
+    else if (config.bgGradType === 'radial') gradVal = `radial-gradient(circle, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
+    else gradVal = `linear-gradient(${config.bgGradAngle}deg, ${config.bgGrad1}, ${config.bgGrad2}, ${config.bgGrad3})`;
   }
   rootStyle.setProperty('--bg-grad', gradVal);
-  
   body.classList.toggle('no-anim', !config.animations);
-  
   creditsEl.style.display = config.showCredits ? 'block' : 'none';
   enginesDiv.style.display = config.showEngines ? 'flex' : 'none';
-
+  focusNoteWrap.classList.toggle('active', config.showFocusNote);
+  focusNoteInput.value = config.focusNoteText || '';
+  
+  // Pomodoro visibility
+  if (config.showPomodoro && body.classList.contains('focus-mode')) {
+    pomodoroWrap.classList.add('active');
+  } else if (!config.showPomodoro) {
+    pomodoroWrap.classList.remove('active');
+  }
+  
+  // Greeting
+  updateGreeting();
+  
   centerBtnWrap.classList.toggle('active', config.showCenterBtn);
   centerBtnText.innerText = config.centerBtnText || 'Launch';
   centerBtn.href = config.centerBtnUrl || '#';
-  
   const oldImg = centerBtn.querySelector('img');
   if (oldImg) oldImg.remove();
   if (config.centerBtnImg) {
     const img = document.createElement('img');
     img.src = config.centerBtnImg;
+    img.alt = "Center button icon";
     centerBtn.insertBefore(img, centerBtnText);
   }
-
-  // Weather & Custom Widget Config
+  if (githubLink) githubLink.style.display = config.showGithubBtn !== false ? 'flex' : 'none';
+  
+  if (config.weatherX !== null && config.weatherX !== undefined) {
+    rootStyle.setProperty('--weather-x', config.weatherX + 'px');
+    rootStyle.setProperty('--weather-y', config.weatherY + 'px');
+    rootStyle.setProperty('--weather-right', 'auto');
+  } else {
+    rootStyle.setProperty('--weather-x', 'auto');
+    rootStyle.setProperty('--weather-y', '20px');
+    rootStyle.setProperty('--weather-right', '20px');
+  }
+  rootStyle.setProperty('--weather-w', (config.weatherW || 170) + 'px');
+  rootStyle.setProperty('--weather-fs', (config.weatherFS || 13) + 'px');
   weatherWidget.classList.toggle('active', config.showWeather);
   customWidgetContainer.classList.toggle('active', config.useCustomWidget);
+  renderCustomButtons();
 }
 
 function getFaviconUrl(url) {
@@ -1245,95 +2844,83 @@ function getFaviconUrl(url) {
   try {
     const domain = new URL(url).hostname;
     return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-  } catch (e) {
-    return '';
-  }
+  } catch (e) { return ''; }
 }
 
 function renderGrid() {
   grid.innerHTML = '';
-  // Filter out completely empty shortcuts to prevent broken UI
-  const validShortcuts = shortcuts.filter(s => s.name.trim() !== '' || s.url.trim() !== '');
-  
-  validShortcuts.forEach((s, index) => {
+  const validShortcuts = shortcuts.map((s, i) => ({ ...s, originalIndex: i })).filter(s => s.name.trim() !== '' || s.url.trim() !== '');
+  validShortcuts.forEach((s) => {
     const wrap = document.createElement('div');
     wrap.className = 'tile-wrap';
-    
+    wrap.draggable = true;
+    wrap.addEventListener('dragstart', (e) => { wrap.classList.add('dragging'); e.dataTransfer.setData('text/plain', s.originalIndex); e.dataTransfer.effectAllowed = 'move'; });
+    wrap.addEventListener('dragend', () => { wrap.classList.remove('dragging'); document.querySelectorAll('.tile-wrap').forEach(el => el.classList.remove('drag-over')); });
+    wrap.addEventListener('dragover', (e) => { e.preventDefault(); if (!wrap.classList.contains('dragging')) wrap.classList.add('drag-over'); });
+    wrap.addEventListener('dragleave', () => wrap.classList.remove('drag-over'));
+    wrap.addEventListener('drop', (e) => {
+      e.preventDefault();
+      wrap.classList.remove('drag-over');
+      const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+      const targetIndex = s.originalIndex;
+      if (draggedIndex !== targetIndex) {
+        const movedItem = shortcuts.splice(draggedIndex, 1)[0];
+        shortcuts.splice(targetIndex, 0, movedItem);
+        saveData(); renderGrid();
+      }
+    });
+    wrap.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); quickEdit(e, s.originalIndex); });
     const a = document.createElement('a');
     a.className = 'tile';
     a.href = s.url;
-
+    a.setAttribute('aria-label', s.name);
+    a.draggable = false;
     const box = document.createElement('div');
     box.className = 'tile-box';
-    
     const fallback = document.createElement('div');
     fallback.className = 'tile-fallback';
     fallback.innerText = s.letter || (s.name ? s.name.charAt(0).toUpperCase() : '?');
-
     const faviconUrl = s.imgUrl || getFaviconUrl(s.url);
-    
     if (faviconUrl) {
       const img = document.createElement('img');
       img.className = 'tile-img';
       img.src = faviconUrl;
-      img.alt = s.name;
-      img.onerror = () => {
-        img.style.display = 'none';
-        fallback.style.display = 'flex';
-      };
+      img.alt = "";
+      img.draggable = false;
+      img.onerror = () => { img.style.display = 'none'; fallback.style.display = 'flex'; };
       box.appendChild(img);
       fallback.style.display = 'none';
     }
-    
     box.appendChild(fallback);
-
     const label = document.createElement('div');
     label.className = 'tile-label';
     label.innerText = s.name;
     if (config.labelPos === 'hidden') label.style.display = 'none';
-
     a.appendChild(box);
     a.appendChild(label);
-
     const burger = document.createElement('button');
     burger.className = 'tile-burger';
     burger.innerHTML = '⋮';
-    burger.onclick = (e) => {
-      e.preventDefault(); e.stopPropagation();
-      closeAllDrops();
-      drop.classList.add('active');
-    };
-
+    burger.setAttribute('aria-label', `Options for ${s.name}`);
+    burger.onclick = (e) => { e.preventDefault(); e.stopPropagation(); closeAllDrops(); drop.classList.add('active'); };
     const drop = document.createElement('div');
     drop.className = 'tile-drop';
-    drop.innerHTML = `
-      <button onclick="quickEdit(event, ${index})">Edit</button>
-      <button class="danger" onclick="quickDelete(event, ${index})">Delete</button>
-    `;
-
+    drop.innerHTML = `<button onclick="quickEdit(event, ${s.originalIndex})">Edit</button><button class="danger" onclick="quickDelete(event, ${s.originalIndex})">Delete</button>`;
     wrap.appendChild(a);
     wrap.appendChild(burger);
     wrap.appendChild(drop);
     grid.appendChild(wrap);
   });
-
-  // Add Placeholders if needed
   const placeholdersNeeded = Math.max(0, config.columns - validShortcuts.length);
   const totalPlaceholders = validShortcuts.length === 0 ? config.columns : placeholdersNeeded;
-  
   for (let i = 0; i < totalPlaceholders; i++) {
     const pWrap = document.createElement('div');
     pWrap.className = 'placeholder-wrap';
-    pWrap.innerHTML = `
-      <div class="placeholder-box">+</div>
-      <div class="tile-label">Add</div>
-    `;
+    pWrap.innerHTML = `<div class="placeholder-box" role="button" tabindex="0">+</div><div class="tile-label">Add</div>`;
     pWrap.onclick = () => {
       openSidebar();
       document.querySelector('[data-target="tab-shortcuts"]').click();
-      setTimeout(() => {
-        document.getElementById('add-shortcut').click();
-      }, 300);
+      setTimeout(() => document.getElementById('add-shortcut').click(), 300);
     };
     grid.appendChild(pWrap);
   }
@@ -1357,23 +2944,52 @@ function renderEngines() {
 }
 
 function renderCustomWidget() {
-  if (!config.useCustomWidget) {
-    customWidgetContainer.innerHTML = '';
-    return;
-  }
-  
+  if (!config.useCustomWidget) { customWidgetContainer.innerHTML = ''; return; }
   customWidgetContainer.innerHTML = config.customWidgetCode || '';
-  
-  // Manually execute scripts injected via innerHTML
   const scripts = customWidgetContainer.querySelectorAll('script');
   scripts.forEach(oldScript => {
     const newScript = document.createElement('script');
-    for (let i = 0; i < oldScript.attributes.length; i++) {
-      newScript.setAttribute(oldScript.attributes[i].name, oldScript.attributes[i].value);
-    }
+    for (let i = 0; i < oldScript.attributes.length; i++) newScript.setAttribute(oldScript.attributes[i].name, oldScript.attributes[i].value);
     newScript.textContent = oldScript.textContent;
     oldScript.parentNode.replaceChild(newScript, oldScript);
   });
+}
+
+function createCustomButtonElement(btn) {
+  const a = document.createElement('a');
+  a.href = btn.url || '#';
+  a.className = 'custom-float-btn';
+  a.title = btn.name || '';
+  a.target = '_blank';
+  a.rel = 'noopener';
+  if (btn.icon && btn.icon.trim()) {
+    const img = document.createElement('img');
+    img.src = btn.icon;
+    img.alt = btn.name || "";
+    img.onerror = () => { img.remove(); a.innerText = (btn.name || '?').charAt(0).toUpperCase(); };
+    a.appendChild(img);
+  } else if (btn.name && btn.name.trim()) {
+    a.innerText = btn.name.charAt(0).toUpperCase();
+  } else { a.innerText = '?'; }
+  return a;
+}
+
+function renderCustomButtons() {
+  ['left', 'top-right', 'bottom'].forEach(pos => {
+    const container = document.getElementById(`custom-btn-${pos}`);
+    if (!container) return;
+    container.innerHTML = '';
+    const buttons = (config.customButtons || []).filter(b => b.position === pos && (b.name || b.url));
+    buttons.forEach(btn => container.appendChild(createCustomButtonElement(btn)));
+  });
+  if (floatingBtnGroup) {
+    floatingBtnGroup.querySelectorAll('.custom-float-btn').forEach(b => b.remove());
+    const bottomRightButtons = (config.customButtons || []).filter(b => b.position === 'bottom-right' && (b.name || b.url));
+    bottomRightButtons.forEach(btn => {
+      const a = createCustomButtonElement(btn);
+      floatingBtnGroup.insertBefore(a, githubLink);
+    });
+  }
 }
 
 function closeAllDrops() {
@@ -1383,20 +2999,22 @@ function closeAllDrops() {
 document.addEventListener('click', (e) => {
   if(!e.target.closest('.tile-burger') && !e.target.closest('.tile-drop')) closeAllDrops();
   if(!e.target.closest('.autocomplete-wrap')) document.getElementById('weather-autocomplete').style.display = 'none';
+  if(!e.target.closest('.weather-menu-wrap')) document.getElementById('weather-menu').classList.remove('active');
 });
 
-function updateClock() {
-  const now = new Date();
-  const options = { hour: '2-digit', minute: '2-digit', hour12: false };
-  if (config.clockTz && config.clockTz.trim() !== '') {
-    options.timeZone = config.clockTz;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('sidebar').classList.contains('active')) closeSidebar();
+    else { closeAllDrops(); document.getElementById('weather-menu').classList.remove('active'); }
   }
-  const timeStr = new Intl.DateTimeFormat('en-US', options).format(now);
-  document.getElementById('clock').textContent = timeStr;
-}
+});
 
-// --- Weather Logic (Real Source: Open-Meteo) ---
+// --- Weather ---
 async function fetchWeather() {
+  if (isOffline) {
+    document.getElementById('weather-loc').innerText = "Offline";
+    return;
+  }
   let lat, lon, locName = config.weatherLoc || "Local";
   const locEl = document.getElementById('weather-loc');
   const tempEl = document.getElementById('weather-temp');
@@ -1404,78 +3022,50 @@ async function fetchWeather() {
   const lowEl = document.getElementById('weather-low');
   const imgEl = document.getElementById('weather-icon');
   const emojiEl = document.getElementById('weather-emoji');
-
-  // Set fallback immediately
   locEl.innerText = "Loading...";
   tempEl.innerText = "--°";
-  highEl.innerText = "↑--°";
-  lowEl.innerText = "↓--°";
-
   try {
-    if (config.weatherLat && config.weatherLon) {
-      lat = config.weatherLat;
-      lon = config.weatherLon;
-    } else if (config.weatherLoc && config.weatherLoc.trim() !== '') {
-      // Fallback geocoding if coords aren't saved but name is
+    if (config.weatherLat && config.weatherLon) { lat = config.weatherLat; lon = config.weatherLon; }
+    else if (config.weatherLoc && config.weatherLoc.trim() !== '') {
       const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(config.weatherLoc)}&count=1`);
       const geoData = await geoRes.json();
-      if (geoData.results && geoData.results[0]) {
-        lat = geoData.results[0].latitude;
-        lon = geoData.results[0].longitude;
-        locName = geoData.results[0].name;
-      } else {
-        throw new Error("Location not found");
-      }
+      if (geoData.results && geoData.results[0]) { lat = geoData.results[0].latitude; lon = geoData.results[0].longitude; locName = geoData.results[0].name; }
+      else throw new Error("Location not found");
     } else {
-      // Browser Geolocation
       if (!navigator.geolocation) throw new Error("No GPS");
       const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject));
-      lat = pos.coords.latitude;
-      lon = pos.coords.longitude;
-      
-      // Reverse Geocode for City Name
+      lat = pos.coords.latitude; lon = pos.coords.longitude;
       try {
         const revGeoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
         const revGeoData = await revGeoRes.json();
         locName = revGeoData.city || revGeoData.locality || revGeoData.principalSubdivision || "Local";
-      } catch (e) {
-        locName = "Local";
-      }
+      } catch (e) { locName = "Local"; }
     }
-
-    // Fetch Weather Data
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&timezone=auto`);
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&timezone=auto`);
     const data = await res.json();
-    
-    if (data.current_weather) {
-      const temp = Math.round(data.current_weather.temperature);
-      const code = data.current_weather.weathercode;
-      const isDay = data.current_weather.is_day;
+    globalWeatherData = data;
+    if (data.current) {
+      const temp = Math.round(data.current.temperature_2m);
+      const code = data.current.weather_code;
+      const isDay = data.current.is_day;
       const high = Math.round(data.daily.temperature_2m_max[0]);
       const low = Math.round(data.daily.temperature_2m_min[0]);
-
       tempEl.innerText = `${temp}°`;
       locEl.innerText = locName;
       highEl.innerText = `↑${high}°`;
       lowEl.innerText = `↓${low}°`;
-
       const iconUrl = mapWeatherIcon(code, isDay);
       imgEl.src = iconUrl;
       imgEl.style.display = 'block';
+      imgEl.alt = mapWeatherEmoji(code);
       emojiEl.style.display = 'none';
-      
-      imgEl.onerror = () => {
-        imgEl.style.display = 'none';
-        emojiEl.style.display = 'block';
-        emojiEl.innerText = mapWeatherEmoji(code);
-      };
+      imgEl.onerror = () => { imgEl.style.display = 'none'; emojiEl.style.display = 'block'; emojiEl.innerText = mapWeatherEmoji(code); };
     }
+    if (config.clockStyle === 'feelsLike') updateClockFeelsLike();
+    if (config.clockStyle === 'weatherIntegrated') updateClockWeather();
   } catch (error) {
-    console.error("Weather fetch failed:", error);
     locEl.innerText = "Set Loc in Settings";
     tempEl.innerText = "--";
-    highEl.innerText = "↑--";
-    lowEl.innerText = "↓--";
     imgEl.style.display = 'none';
     emojiEl.style.display = 'block';
     emojiEl.innerText = '⚠️';
@@ -1508,37 +3098,72 @@ function mapWeatherIcon(code, isDay) {
   else if (code <= 82) iconBase = 'partly-cloudy-day-rain';
   else if (code <= 86) iconBase = 'partly-cloudy-day-snow';
   else if (code >= 95) iconBase = 'thunderstorms-day';
-  
-  // Using jsDelivr CDN for perfectly reliable GitHub raw content loading
   return `https://cdn.jsdelivr.net/gh/basmilius/weather-icons@dev/production/fill/all/${iconBase}.svg`;
 }
 
-// --- Quick Actions from Grid ---
+// --- Weather UI ---
+function bindWeatherUI() {
+  const weatherDotsBtn = document.getElementById('weather-dots-btn');
+  const weatherMenu = document.getElementById('weather-menu');
+  const dragHandle = document.getElementById('weather-drag-handle');
+  const resizeHandle = document.getElementById('weather-resize-handle');
+  weatherDotsBtn.addEventListener('click', (e) => { e.stopPropagation(); weatherMenu.classList.toggle('active'); });
+  document.getElementById('weather-refresh-btn').addEventListener('click', () => { fetchWeather(); weatherMenu.classList.remove('active'); });
+  document.getElementById('weather-change-btn').addEventListener('click', () => {
+    openSidebar();
+    document.querySelector('[data-target="tab-appearance"]').click();
+    document.querySelectorAll('.accordion-item').forEach(acc => { if (acc.textContent.includes('Weather Widget')) { acc.open = true; acc.scrollIntoView({ behavior: 'smooth', block: 'center' }); } });
+    setTimeout(() => document.getElementById('cfg-weather-loc').focus(), 300);
+    weatherMenu.classList.remove('active');
+  });
+  document.getElementById('weather-hide-btn').addEventListener('click', () => {
+    config.showWeather = false;
+    document.getElementById('cfg-weather-toggle').checked = false;
+    applyConfig(); saveData();
+    weatherMenu.classList.remove('active');
+  });
+  let isDragging = false, isResizing = false, startX, startY, startLeft, startTop, startRx, startRw;
+  const startDrag = (clientX, clientY) => { isDragging = true; startX = clientX; startY = clientY; const rect = weatherWidget.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; document.body.style.userSelect = 'none'; };
+  const startResize = (clientX) => { isResizing = true; startRx = clientX; startRw = weatherWidget.offsetWidth; document.body.style.userSelect = 'none'; };
+  const moveDrag = (clientX, clientY) => {
+    if (isDragging) {
+      let newX = Math.max(0, Math.min(startLeft + (clientX - startX), window.innerWidth - weatherWidget.offsetWidth));
+      let newY = Math.max(0, Math.min(startTop + (clientY - startY), window.innerHeight - weatherWidget.offsetHeight));
+      rootStyle.setProperty('--weather-x', newX + 'px'); rootStyle.setProperty('--weather-y', newY + 'px'); rootStyle.setProperty('--weather-right', 'auto');
+    } else if (isResizing) {
+      let newWidth = Math.max(130, Math.min(400, startRw + (clientX - startRx)));
+      let newFontSize = Math.max(11, Math.min(24, newWidth / 13));
+      rootStyle.setProperty('--weather-w', newWidth + 'px'); rootStyle.setProperty('--weather-fs', newFontSize + 'px');
+    }
+  };
+  const endDragResize = () => {
+    if (isDragging) { isDragging = false; document.body.style.userSelect = ''; const rect = weatherWidget.getBoundingClientRect(); config.weatherX = rect.left; config.weatherY = rect.top; config.weatherRight = 'auto'; saveData(); }
+    if (isResizing) { isResizing = false; document.body.style.userSelect = ''; config.weatherW = weatherWidget.offsetWidth; config.weatherFS = parseFloat(getComputedStyle(weatherWidget).fontSize); saveData(); }
+  };
+  dragHandle.addEventListener('mousedown', (e) => { if (e.target.closest('.weather-menu-wrap')) return; startDrag(e.clientX, e.clientY); });
+  resizeHandle.addEventListener('mousedown', (e) => { e.stopPropagation(); startResize(e.clientX); });
+  document.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+  document.addEventListener('mouseup', endDragResize);
+  dragHandle.addEventListener('touchstart', (e) => { if (e.target.closest('.weather-menu-wrap')) return; const t = e.touches[0]; startDrag(t.clientX, t.clientY); }, { passive: true });
+  resizeHandle.addEventListener('touchstart', (e) => { e.stopPropagation(); const t = e.touches[0]; startResize(t.clientX); }, { passive: true });
+  document.addEventListener('touchmove', (e) => { if (isDragging || isResizing) { const t = e.touches[0]; moveDrag(t.clientX, t.clientY); } }, { passive: true });
+  document.addEventListener('touchend', endDragResize);
+}
+
 window.quickEdit = function(e, index) {
-  e.preventDefault(); e.stopPropagation();
-  closeAllDrops();
-  openSidebar();
+  e.preventDefault(); e.stopPropagation(); closeAllDrops(); openSidebar();
   document.querySelector('[data-target="tab-shortcuts"]').click();
   setTimeout(() => {
     const inputs = document.querySelectorAll('#settings-list .set-name');
-    if(inputs[index]) {
-      const row = inputs[index].closest('.shortcut-item');
-      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      row.classList.add('highlight');
-      inputs[index].focus();
-      setTimeout(() => row.classList.remove('highlight'), 1500);
-    }
+    if(inputs[index]) { const row = inputs[index].closest('.shortcut-item'); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); row.classList.add('highlight'); inputs[index].focus(); setTimeout(() => row.classList.remove('highlight'), 1500); }
   }, 150);
 }
 
 window.quickDelete = function(e, index) {
-  e.preventDefault(); e.stopPropagation();
-  closeAllDrops();
-  shortcuts.splice(index, 1);
-  saveData(); renderGrid(); renderSettingsList();
+  e.preventDefault(); e.stopPropagation(); closeAllDrops();
+  shortcuts.splice(index, 1); saveData(); renderGrid(); renderSettingsList();
 }
 
-// --- Search Engine Logic ---
 searchForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const val = searchInput.value.trim();
@@ -1554,35 +3179,20 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Tab' && document.activeElement === searchInput && config.showEngines) {
     e.preventDefault();
     currentEngineIdx = (currentEngineIdx + 1) % config.engines.length;
-    renderEngines();
-    searchInput.focus();
+    renderEngines(); searchInput.focus();
   }
-  if (e.key === '/' && document.activeElement !== searchInput && !document.getElementById('sidebar').classList.contains('active')) {
+  if (e.key === '/' && document.activeElement !== searchInput && !document.getElementById('sidebar').classList.contains('active') && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
     e.preventDefault(); searchInput.focus();
   }
 });
 
-// --- Settings UI / Sidebar ---
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('sidebar-overlay');
 
-function openSidebar() {
-  sidebar.classList.add('active');
-  overlay.classList.add('active');
-  populateSettings();
-}
+function openSidebar() { sidebar.classList.add('active'); overlay.classList.add('active'); populateSettings(); setTimeout(() => document.getElementById('close-settings').focus(), 100); }
+function closeSidebar() { shortcuts = shortcuts.filter(s => s.name.trim() !== '' || s.url.trim() !== ''); renderSettingsList(); sidebar.classList.remove('active'); overlay.classList.remove('active'); renderGrid(); searchInput.focus(); }
 
-function closeSidebar() {
-  // Clean up empty shortcuts before closing
-  shortcuts = shortcuts.filter(s => s.name.trim() !== '' || s.url.trim() !== '');
-  renderSettingsList();
-  sidebar.classList.remove('active');
-  overlay.classList.remove('active');
-  renderGrid();
-  searchInput.focus();
-}
-
-document.getElementById('open-settings').addEventListener('click', openSidebar);
+document.getElementById('open-settings').addEventListener('click', (e) => { if (touchMoved) { e.preventDefault(); touchMoved = false; return; } openSidebar(); });
 document.getElementById('close-settings').addEventListener('click', closeSidebar);
 overlay.addEventListener('click', closeSidebar);
 
@@ -1592,86 +3202,55 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(btn.dataset.target).classList.add('active');
-    // Reset scroll to top when switching tabs
     sidebar.scrollTop = 0;
   });
 });
 
-// Settings Search Logic
 document.getElementById('settings-search').addEventListener('input', (e) => {
   const query = e.target.value.toLowerCase();
   const accordions = document.querySelectorAll('.accordion-item');
-  
-  if (query === '') {
-    accordions.forEach(acc => {
-      acc.style.display = '';
-      // Restore default open state
-      if (acc.querySelector('summary').textContent.includes('Time') || acc.querySelector('summary').textContent.includes('Themes') || acc.querySelector('summary').textContent.includes('Taskbar')) {
-        acc.open = true;
-      } else {
-        acc.open = false;
-      }
-    });
-    return;
-  }
-
-  accordions.forEach(acc => {
-    const text = acc.textContent.toLowerCase();
-    if (text.includes(query)) {
-      acc.style.display = '';
-      acc.open = true;
-    } else {
-      acc.style.display = 'none';
-    }
-  });
+  if (query === '') { accordions.forEach(acc => { acc.style.display = ''; acc.open = acc.querySelector('summary').textContent.includes('Clock') || acc.querySelector('summary').textContent.includes('Focus'); }); return; }
+  accordions.forEach(acc => { acc.style.display = acc.textContent.toLowerCase().includes(query) ? '' : 'none'; if (acc.style.display !== 'none') acc.open = true; });
 });
 
-// Dynamic Sync Setup for Number & Slider Pairs
 function bindSync(key, cssVar, suffix = '') {
   const slider = document.getElementById(`cfg-${key}-slider`);
   const num = document.getElementById(`cfg-${key}-num`);
   if(!slider || !num) return;
-  
   const configKeyMap = {
     'search-width': 'searchWidth', 'search-y': 'searchY', 'search-z': 'searchZ',
     'pos-x': 'posX', 'pos-y': 'posY', 'grid-gap': 'gridGap', 'columns': 'columns',
     'radius': 'radius', 'tile-size': 'tileSize', 'icon-size': 'iconSize',
     'label-size': 'labelSize', 'anim-height': 'animHeight', 'grad-angle': 'bgGradAngle',
-    'clock-size': 'clockSize'
+    'clock-size': 'clockSize', 'clock-x': 'clockX', 'clock-y': 'clockY',
+    'bg-brightness': 'bgImageBrightness', 'bg-blur': 'bgImageBlur', 'ui-scale': 'uiScale',
+    'focus-duration': 'focusDuration'
   };
   const configKey = configKeyMap[key];
-  
   const update = (val) => {
     val = Number(val);
-    slider.value = val;
-    num.value = val;
+    slider.value = val; num.value = val;
     if(cssVar) rootStyle.setProperty(`--${cssVar}`, val + suffix);
     config[configKey] = val;
     saveData();
+    if(key === 'focus-duration') { pomodoroTime = val * 60; pomodoroTotal = pomodoroTime; updatePomodoroDisplay(); }
     if(key === 'grad-angle' && config.useGradient) applyConfig();
+    if(key === 'ui-scale') applyConfig();
   };
-  
   slider.addEventListener('input', (e) => update(e.target.value));
   num.addEventListener('input', (e) => update(e.target.value));
 }
 
-// Weather Autocomplete Logic
 let autocompleteTimeout;
 document.getElementById('cfg-weather-loc').addEventListener('input', (e) => {
   clearTimeout(autocompleteTimeout);
   const query = e.target.value;
   const dropdown = document.getElementById('weather-autocomplete');
-  
-  if (query.length < 3) {
-    dropdown.style.display = 'none';
-    return;
-  }
-  
+  if (query.length < 3 || isOffline) { dropdown.style.display = 'none'; return; }
   autocompleteTimeout = setTimeout(async () => {
     try {
       const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`);
       const data = await res.json();
-      
       dropdown.innerHTML = '';
       if (data.results) {
         dropdown.style.display = 'block';
@@ -1681,21 +3260,13 @@ document.getElementById('cfg-weather-loc').addEventListener('input', (e) => {
           item.innerText = `${loc.name}, ${loc.country}`;
           item.onclick = () => {
             document.getElementById('cfg-weather-loc').value = loc.name;
-            config.weatherLoc = loc.name;
-            config.weatherLat = loc.latitude;
-            config.weatherLon = loc.longitude;
-            dropdown.style.display = 'none';
-            saveData();
-            fetchWeather();
+            config.weatherLoc = loc.name; config.weatherLat = loc.latitude; config.weatherLon = loc.longitude;
+            dropdown.style.display = 'none'; saveData(); fetchWeather();
           };
           dropdown.appendChild(item);
         });
-      } else {
-        dropdown.style.display = 'none';
-      }
-    } catch (err) {
-      console.error("Autocomplete failed", err);
-    }
+      } else dropdown.style.display = 'none';
+    } catch (err) { console.error("Autocomplete failed", err); }
   }, 300);
 });
 
@@ -1714,273 +3285,188 @@ function bindControls() {
   bindSync('anim-height', 'anim-height', 'px');
   bindSync('grad-angle', null, '');
   bindSync('clock-size', 'clock-size', 'px');
+  bindSync('clock-x', 'clock-x', 'px');
+  bindSync('clock-y', 'clock-y', 'px');
+  bindSync('bg-brightness', 'bg-brightness', '%');
+  bindSync('bg-blur', 'bg-blur', 'px');
+  bindSync('ui-scale', 'ui-scale', '%');
+  bindSync('focus-duration', null, '');
 
-  // Clock Timezone
-  document.getElementById('cfg-clock-tz').addEventListener('input', (e) => {
-    config.clockTz = e.target.value;
-    saveData();
-    updateClock();
+  // Bind Wallpaper Preset Buttons
+  document.querySelectorAll('.wallpaper-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyWallpaperPreset(btn.dataset.source));
   });
 
-  // Background Image Upload
+  document.getElementById('reset-layout-btn').addEventListener('click', () => {
+    config.posX = 0; config.posY = 0; config.clockX = 0; config.clockY = 0;
+    config.weatherX = null; config.weatherY = 20; config.weatherW = 170; config.weatherFS = 13;
+    applyConfig(); saveData(); populateSettings(); showToast("Layout reset!");
+  });
+
+  document.getElementById('cfg-focus-note-toggle').addEventListener('change', (e) => {
+    config.showFocusNote = e.target.checked;
+    focusNoteWrap.classList.toggle('active', config.showFocusNote);
+    saveData();
+  });
+
+  document.getElementById('cfg-pomodoro-toggle').addEventListener('change', (e) => {
+    config.showPomodoro = e.target.checked;
+    if (config.showPomodoro && body.classList.contains('focus-mode')) pomodoroWrap.classList.add('active');
+    else pomodoroWrap.classList.remove('active');
+    saveData();
+  });
+
+  document.getElementById('cfg-greeting-toggle').addEventListener('change', (e) => {
+    config.showGreeting = e.target.checked;
+    updateGreeting();
+    saveData();
+  });
+
+  document.getElementById('cfg-focus-accent').addEventListener('input', (e) => {
+    config.focusAccent = e.target.value;
+    rootStyle.setProperty('--focus-accent', e.target.value);
+    saveData();
+  });
+
+  focusNoteInput.addEventListener('input', (e) => { config.focusNoteText = e.target.value; saveData(); });
+
+  document.getElementById('cfg-clock-style').addEventListener('change', (e) => {
+    config.clockStyle = e.target.value; renderClockStructure(); updateClock(); saveData();
+    if (['feelsLike', 'weatherIntegrated'].includes(config.clockStyle)) { if (globalWeatherData) { if (config.clockStyle === 'feelsLike') updateClockFeelsLike(); if (config.clockStyle === 'weatherIntegrated') updateClockWeather(); } else fetchWeather(); }
+  });
+  document.getElementById('cfg-date-position').addEventListener('change', (e) => { config.datePosition = e.target.value; renderClockStructure(); updateClock(); saveData(); });
+  document.getElementById('cfg-date-format').addEventListener('change', (e) => { config.dateFormat = e.target.value; updateClock(); saveData(); });
+  document.getElementById('cfg-show-seconds').addEventListener('change', (e) => {
+    config.showSeconds = e.target.checked;
+    if (config.clockStyle === 'analog') { const secHand = document.getElementById('second-hand'); if (secHand) secHand.style.display = config.showSeconds ? '' : 'none'; }
+    updateClock(); saveData();
+  });
+  document.getElementById('cfg-clock-24h').addEventListener('change', (e) => { config.clock24h = e.target.checked; updateClock(); saveData(); });
+  document.getElementById('cfg-clock-tz').addEventListener('input', (e) => { config.clockTz = e.target.value; saveData(); updateClock(); });
+  
+  // Updated Upload configuration to clear wallpaperSource
   document.getElementById('cfg-bg-upload').addEventListener('change', (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        config.bgImage = ev.target.result;
-        applyConfig();
-        saveData();
-      };
-      reader.readAsDataURL(file);
+    if (file) { 
+      const reader = new FileReader(); 
+      reader.onload = (ev) => { 
+        config.bgImage = ev.target.result; 
+        config.wallpaperSource = 'upload'; 
+        applyConfig(); 
+        saveData(); 
+        populateSettings(); 
+      }; 
+      reader.readAsDataURL(file); 
     }
   });
-  document.getElementById('cfg-bg-clear').addEventListener('click', () => {
-    config.bgImage = '';
-    document.getElementById('cfg-bg-upload').value = '';
-    applyConfig();
-    saveData();
+  
+  document.getElementById('cfg-bg-clear').addEventListener('click', () => { 
+    config.bgImage = ''; 
+    config.wallpaperSource = ''; 
+    document.getElementById('cfg-bg-upload').value = ''; 
+    applyConfig(); 
+    saveData(); 
+    populateSettings(); 
   });
 
-  document.getElementById('cfg-engines').addEventListener('change', (e) => {
-    config.showEngines = e.target.checked;
-    enginesDiv.style.display = config.showEngines ? 'flex' : 'none';
-    saveData();
-  });
-  document.getElementById('cfg-credits').addEventListener('change', (e) => {
-    config.showCredits = e.target.checked;
-    creditsEl.style.display = config.showCredits ? 'block' : 'none';
-    saveData();
-  });
-
-  // Label Pos
-  document.getElementById('cfg-label-pos').addEventListener('change', (e) => {
-    config.labelPos = e.target.value;
-    rootStyle.setProperty('--label-flex', e.target.value);
-    saveData();
-    renderGrid();
-  });
-
-  // Font Family
-  document.getElementById('cfg-font-family').addEventListener('change', (e) => {
-    config.fontFamily = e.target.value;
-    rootStyle.setProperty('--font-family', e.target.value);
-    saveData();
-  });
-
-  // Animations Toggle
-  document.getElementById('cfg-anim-toggle').addEventListener('change', (e) => {
-    config.animations = e.target.checked;
-    body.classList.toggle('no-anim', !config.animations);
-    document.getElementById('anim-controls').style.display = config.animations ? 'flex' : 'none';
-    saveData();
-  });
-
-  // Gradient Toggle
-  document.getElementById('cfg-grad-toggle').addEventListener('change', (e) => {
-    config.useGradient = e.target.checked;
-    document.getElementById('gradient-controls').style.display = config.useGradient ? 'flex' : 'none';
-    applyConfig();
-    saveData();
-  });
-
-  // Gradient Type
-  document.getElementById('cfg-grad-type').addEventListener('change', (e) => {
-    config.bgGradType = e.target.value;
-    applyConfig();
-    saveData();
-  });
-
-  // Gradient Colors
-  ['cfg-grad1', 'cfg-grad2', 'cfg-grad3'].forEach(id => {
-    document.getElementById(id).addEventListener('input', (e) => {
-      if(id === 'cfg-grad1') config.bgGrad1 = e.target.value;
-      if(id === 'cfg-grad2') config.bgGrad2 = e.target.value;
-      if(id === 'cfg-grad3') config.bgGrad3 = e.target.value;
-      applyConfig();
-      saveData();
-    });
-  });
-
-  // Center Button Controls
-  document.getElementById('cfg-center-btn-toggle').addEventListener('change', (e) => {
-    config.showCenterBtn = e.target.checked;
-    centerBtnWrap.classList.toggle('active', config.showCenterBtn);
-    saveData();
-  });
-  document.getElementById('cfg-center-btn-text').addEventListener('input', (e) => {
-    config.centerBtnText = e.target.value;
-    centerBtnText.innerText = e.target.value;
-    saveData();
-  });
-  document.getElementById('cfg-center-btn-url').addEventListener('input', (e) => {
-    config.centerBtnUrl = e.target.value;
-    centerBtn.href = e.target.value;
-    saveData();
-  });
-  document.getElementById('cfg-center-btn-img').addEventListener('input', (e) => {
-    config.centerBtnImg = e.target.value;
-    const oldImg = centerBtn.querySelector('img');
-    if (oldImg) oldImg.remove();
-    if (config.centerBtnImg) {
-      const img = document.createElement('img');
-      img.src = config.centerBtnImg;
-      centerBtn.insertBefore(img, centerBtnText);
-    }
-    saveData();
-  });
-
-  // Weather Controls
-  document.getElementById('cfg-weather-toggle').addEventListener('change', (e) => {
-    config.showWeather = e.target.checked;
-    applyConfig();
-    if(config.showWeather) fetchWeather();
-    saveData();
-  });
-
-  // Search Bar Customization
-  document.getElementById('cfg-search-text').addEventListener('input', (e) => {
-    config.searchText = e.target.value;
-    searchInput.placeholder = e.target.value;
-    saveData();
-  });
-  document.getElementById('cfg-search-bg').addEventListener('input', (e) => {
-    config.searchBg = e.target.value;
-    rootStyle.setProperty('--search-bg', e.target.value);
-    saveData();
-  });
-  document.getElementById('cfg-search-text-color').addEventListener('input', (e) => {
-    config.searchTextColor = e.target.value;
-    rootStyle.setProperty('--search-text', e.target.value);
-    saveData();
-  });
-  document.getElementById('cfg-search-border').addEventListener('input', (e) => {
-    config.searchBorder = e.target.value;
-    rootStyle.setProperty('--search-border', e.target.value);
-    saveData();
-  });
-
-  // Custom Widget Controls
-  document.getElementById('cfg-custom-widget-toggle').addEventListener('change', (e) => {
-    config.useCustomWidget = e.target.checked;
-    applyConfig();
-    renderCustomWidget();
-    saveData();
-  });
-  document.getElementById('cfg-custom-widget-code').addEventListener('input', (e) => {
-    config.customWidgetCode = e.target.value;
-    saveData();
-  });
-  document.getElementById('run-custom-widget').addEventListener('click', () => {
-    renderCustomWidget();
-  });
-
-  // Save Custom Theme
-  document.getElementById('save-custom-theme').addEventListener('click', () => {
-    const name = prompt("Enter a name for your custom theme:");
-    if(name) {
-      customThemes[name] = { bg: config.bg, fg: config.fg };
-      localStorage.setItem('start-custom-themes', JSON.stringify(customThemes));
-      populateThemes();
-      config.themePreset = name;
-      document.getElementById('cfg-theme-preset').value = name;
-      saveData();
-    }
-  });
-
-  // Import/Export/Copy
-  document.getElementById('btn-export').addEventListener('click', () => {
-    document.getElementById('cfg-io-area').value = JSON.stringify({ config, shortcuts });
-  });
-  document.getElementById('btn-copy').addEventListener('click', () => {
-    const text = document.getElementById('cfg-io-area').value;
-    navigator.clipboard.writeText(text).then(() => {
-      document.getElementById('copy-text').innerText = 'Copied';
-      document.getElementById('copy-icon').innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
-      setTimeout(() => {
-        document.getElementById('copy-text').innerText = 'Copy';
-        document.getElementById('copy-icon').innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>';
-      }, 2000);
-    });
-  });
-  document.getElementById('btn-import').addEventListener('click', () => {
-    try {
-      const data = JSON.parse(document.getElementById('cfg-io-area').value);
-      if(data.config) config = data.config;
-      if(data.shortcuts) shortcuts = data.shortcuts;
-      saveData();
-      location.reload();
-    } catch (e) {
-      alert("Invalid JSON data!");
-    }
-  });
-
-  document.getElementById('add-engine').addEventListener('click', () => {
-    config.engines.push({ name: 'New', query: 'https://example.com/?q=' });
-    saveData();
-    renderEnginesList();
-    renderEngines();
-  });
+  document.getElementById('cfg-engines').addEventListener('change', (e) => { config.showEngines = e.target.checked; enginesDiv.style.display = config.showEngines ? 'flex' : 'none'; saveData(); });
+  document.getElementById('cfg-credits').addEventListener('change', (e) => { config.showCredits = e.target.checked; creditsEl.style.display = config.showCredits ? 'block' : 'none'; saveData(); });
+  document.getElementById('cfg-github-btn').addEventListener('change', (e) => { config.showGithubBtn = e.target.checked; if (githubLink) githubLink.style.display = config.showGithubBtn ? 'flex' : 'none'; saveData(); });
+  document.getElementById('add-custom-btn').addEventListener('click', () => { if (!config.customButtons) config.customButtons = []; config.customButtons.push({ name: '', url: '', icon: '', position: 'left' }); saveData(); renderCustomButtonsList(); renderCustomButtons(); });
+  document.getElementById('cfg-label-pos').addEventListener('change', (e) => { config.labelPos = e.target.value; rootStyle.setProperty('--label-flex', e.target.value); saveData(); renderGrid(); });
+  document.getElementById('cfg-font-family').addEventListener('change', (e) => { config.fontFamily = e.target.value; rootStyle.setProperty('--font-family', e.target.value); saveData(); });
+  document.getElementById('cfg-anim-toggle').addEventListener('change', (e) => { config.animations = e.target.checked; body.classList.toggle('no-anim', !config.animations); document.getElementById('anim-controls').style.display = config.animations ? 'flex' : 'none'; saveData(); });
+  document.getElementById('cfg-grad-toggle').addEventListener('change', (e) => { config.useGradient = e.target.checked; document.getElementById('gradient-controls').style.display = config.useGradient ? 'flex' : 'none'; applyConfig(); saveData(); });
+  document.getElementById('cfg-grad-type').addEventListener('change', (e) => { config.bgGradType = e.target.value; applyConfig(); saveData(); });
+  ['cfg-grad1', 'cfg-grad2', 'cfg-grad3'].forEach(id => { document.getElementById(id).addEventListener('input', (e) => { if(id === 'cfg-grad1') config.bgGrad1 = e.target.value; if(id === 'cfg-grad2') config.bgGrad2 = e.target.value; if(id === 'cfg-grad3') config.bgGrad3 = e.target.value; applyConfig(); saveData(); }); });
+  document.getElementById('cfg-center-btn-toggle').addEventListener('change', (e) => { config.showCenterBtn = e.target.checked; centerBtnWrap.classList.toggle('active', config.showCenterBtn); saveData(); });
+  document.getElementById('cfg-center-btn-text').addEventListener('input', (e) => { config.centerBtnText = e.target.value; centerBtnText.innerText = e.target.value; saveData(); });
+  document.getElementById('cfg-center-btn-url').addEventListener('input', (e) => { config.centerBtnUrl = e.target.value; centerBtn.href = e.target.value; saveData(); });
+  document.getElementById('cfg-center-btn-img').addEventListener('input', (e) => { config.centerBtnImg = e.target.value; const oldImg = centerBtn.querySelector('img'); if (oldImg) oldImg.remove(); if (config.centerBtnImg) { const img = document.createElement('img'); img.src = config.centerBtnImg; img.alt = "Center button icon"; centerBtn.insertBefore(img, centerBtnText); } saveData(); });
+  document.getElementById('cfg-weather-toggle').addEventListener('change', (e) => { config.showWeather = e.target.checked; applyConfig(); if(config.showWeather && !isOffline) fetchWeather(); saveData(); });
+  document.getElementById('cfg-search-text').addEventListener('input', (e) => { config.searchText = e.target.value; searchInput.placeholder = e.target.value; saveData(); });
+  document.getElementById('cfg-search-bg').addEventListener('input', (e) => { config.searchBg = e.target.value; rootStyle.setProperty('--search-bg', e.target.value); saveData(); });
+  document.getElementById('cfg-search-text-color').addEventListener('input', (e) => { config.searchTextColor = e.target.value; rootStyle.setProperty('--search-text', e.target.value); saveData(); });
+  document.getElementById('cfg-search-border').addEventListener('input', (e) => { config.searchBorder = e.target.value; rootStyle.setProperty('--search-border', e.target.value); saveData(); });
+  document.getElementById('cfg-custom-widget-toggle').addEventListener('change', (e) => { config.useCustomWidget = e.target.checked; applyConfig(); renderCustomWidget(); saveData(); });
+  document.getElementById('cfg-custom-widget-code').addEventListener('input', (e) => { config.customWidgetCode = e.target.value; saveData(); });
+  document.getElementById('run-custom-widget').addEventListener('click', () => renderCustomWidget());
+  document.getElementById('save-custom-theme').addEventListener('click', () => { const name = prompt("Enter theme name:"); if(name) { customThemes[name] = { bg: config.bg, fg: config.fg }; localStorage.setItem('start-custom-themes', JSON.stringify(customThemes)); populateThemes(); config.themePreset = name; document.getElementById('cfg-theme-preset').value = name; saveData(); } });
+  document.getElementById('btn-export').addEventListener('click', () => { document.getElementById('cfg-io-area').value = JSON.stringify({ config, shortcuts }); });
+  document.getElementById('btn-copy').addEventListener('click', () => { navigator.clipboard.writeText(document.getElementById('cfg-io-area').value).then(() => showToast("Copied!")); });
+  document.getElementById('btn-import').addEventListener('click', () => { try { const data = JSON.parse(document.getElementById('cfg-io-area').value); if(data.config) config = data.config; if(data.shortcuts) shortcuts = data.shortcuts; saveData(); location.reload(); } catch (e) { showToast("Invalid JSON!"); } });
+  document.getElementById('add-engine').addEventListener('click', () => { config.engines.push({ name: 'New', query: 'https://example.com/?q=' }); saveData(); renderEnginesList(); renderEngines(); });
+  document.getElementById('cache-resources-btn').addEventListener('click', precacheResources);
+  document.getElementById('clear-cache-btn').addEventListener('click', clearCache);
 }
 
-// Populate Settings Form
 function populateSettings() {
-  renderSettingsList();
-  renderEnginesList();
-  populateThemes();
-  
+  renderSettingsList(); renderEnginesList(); renderCustomButtonsList(); populateThemes();
+  document.getElementById('cfg-language').value = config.lang || 'en';
   document.getElementById('cfg-bg').value = config.bg;
   document.getElementById('cfg-fg').value = config.fg;
   document.getElementById('cfg-font-family').value = config.fontFamily;
   document.getElementById('cfg-clock-tz').value = config.clockTz || '';
-
-  const setSync = (key, val) => {
-    document.getElementById(`cfg-${key}-slider`).value = val;
-    document.getElementById(`cfg-${key}-num`).value = val;
-  };
+  document.getElementById('cfg-clock-style').value = config.clockStyle || 'minimal';
+  document.getElementById('cfg-date-position').value = config.datePosition || 'bottom';
+  document.getElementById('cfg-date-format').value = config.dateFormat || 'short';
+  document.getElementById('cfg-show-seconds').checked = config.showSeconds || false;
+  document.getElementById('cfg-clock-24h').checked = config.clock24h !== false;
+  document.getElementById('cfg-focus-note-toggle').checked = config.showFocusNote || false;
+  document.getElementById('cfg-pomodoro-toggle').checked = config.showPomodoro || false;
+  document.getElementById('cfg-greeting-toggle').checked = config.showGreeting !== false;
+  document.getElementById('cfg-focus-accent').value = config.focusAccent || '#fabd2f';
+  const setSync = (key, val) => { const slider = document.getElementById(`cfg-${key}-slider`); const num = document.getElementById(`cfg-${key}-num`); if(slider) slider.value = val; if(num) num.value = val; };
+  setSync('search-width', config.searchWidth); setSync('search-y', config.searchY); setSync('search-z', config.searchZ);
+  setSync('pos-x', config.posX); setSync('pos-y', config.posY); setSync('columns', config.columns);
+  setSync('radius', config.radius); setSync('grid-gap', config.gridGap); setSync('tile-size', config.tileSize);
+  setSync('icon-size', config.iconSize); setSync('label-size', config.labelSize); setSync('anim-height', config.animHeight);
+  setSync('grad-angle', config.bgGradAngle); setSync('clock-size', config.clockSize);
+  setSync('clock-x', config.clockX || 0); setSync('clock-y', config.clockY || 0);
+  setSync('bg-brightness', config.bgImageBrightness || 100); setSync('bg-blur', config.bgImageBlur || 0);
+  setSync('ui-scale', config.uiScale || 100); setSync('focus-duration', config.focusDuration || 25);
   
-  setSync('search-width', config.searchWidth);
-  setSync('search-y', config.searchY);
-  setSync('search-z', config.searchZ);
-  setSync('pos-x', config.posX);
-  setSync('pos-y', config.posY);
-  setSync('columns', config.columns);
-  setSync('radius', config.radius);
-  setSync('grid-gap', config.gridGap);
-  setSync('tile-size', config.tileSize);
-  setSync('icon-size', config.iconSize);
-  setSync('label-size', config.labelSize);
-  setSync('anim-height', config.animHeight);
-  setSync('grad-angle', config.bgGradAngle);
-  setSync('clock-size', config.clockSize);
-
+  // Update Background UI Text intelligently
+  if (config.bgImage) {
+    if (config.wallpaperSource === 'upload') {
+      document.getElementById('upload-btn-text').innerText = 'Change Image';
+      document.getElementById('file-name-display').innerText = 'Custom image loaded';
+    } else if (config.wallpaperSource) {
+      const sourceName = config.wallpaperSource.charAt(0).toUpperCase() + config.wallpaperSource.slice(1);
+      document.getElementById('upload-btn-text').innerText = `Using: ${sourceName}`;
+      document.getElementById('file-name-display').innerText = `${sourceName} feed active`;
+    } else {
+      document.getElementById('upload-btn-text').innerText = 'Change Image';
+      document.getElementById('file-name-display').innerText = 'Custom image loaded';
+    }
+    document.getElementById('file-name-display').style.display = 'block';
+  } else {
+    document.getElementById('upload-btn-text').innerText = 'Upload Background Image';
+    document.getElementById('file-name-display').style.display = 'none';
+  }
+  
   document.getElementById('cfg-engines').checked = config.showEngines;
   document.getElementById('cfg-credits').checked = config.showCredits;
+  document.getElementById('cfg-github-btn').checked = config.showGithubBtn !== false;
   document.getElementById('cfg-label-pos').value = config.labelPos;
-  
   document.getElementById('cfg-anim-toggle').checked = config.animations;
   document.getElementById('anim-controls').style.display = config.animations ? 'flex' : 'none';
-
   document.getElementById('cfg-grad-toggle').checked = config.useGradient;
   document.getElementById('gradient-controls').style.display = config.useGradient ? 'flex' : 'none';
   document.getElementById('cfg-grad-type').value = config.bgGradType;
   document.getElementById('cfg-grad1').value = config.bgGrad1;
   document.getElementById('cfg-grad2').value = config.bgGrad2;
   document.getElementById('cfg-grad3').value = config.bgGrad3;
-
   document.getElementById('cfg-center-btn-toggle').checked = config.showCenterBtn;
   document.getElementById('cfg-center-btn-text').value = config.centerBtnText || '';
   document.getElementById('cfg-center-btn-url').value = config.centerBtnUrl || '';
   document.getElementById('cfg-center-btn-img').value = config.centerBtnImg || '';
-
   document.getElementById('cfg-weather-toggle').checked = config.showWeather;
   document.getElementById('cfg-weather-loc').value = config.weatherLoc || '';
-
   document.getElementById('cfg-search-text').value = config.searchText || '';
   document.getElementById('cfg-search-bg').value = config.searchBg || '#282828';
   document.getElementById('cfg-search-text-color').value = config.searchTextColor || '#ebdbb2';
   document.getElementById('cfg-search-border').value = config.searchBorder || '#3c3836';
-
   document.getElementById('cfg-custom-widget-toggle').checked = config.useCustomWidget;
   document.getElementById('cfg-custom-widget-code').value = config.customWidgetCode || '';
 }
@@ -1988,50 +3474,23 @@ function populateSettings() {
 function populateThemes() {
   const themeSelect = document.getElementById('cfg-theme-preset');
   themeSelect.innerHTML = '<option value="custom">Custom</option>';
-  for(const key in themes) {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.innerText = key.charAt(0).toUpperCase() + key.slice(1);
-    themeSelect.appendChild(opt);
-  }
-  for(const key in customThemes) {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.innerText = `${key} (Custom)`;
-    themeSelect.appendChild(opt);
-  }
+  for(const key in themes) { const opt = document.createElement('option'); opt.value = key; opt.innerText = key.charAt(0).toUpperCase() + key.slice(1); themeSelect.appendChild(opt); }
+  for(const key in customThemes) { const opt = document.createElement('option'); opt.value = key; opt.innerText = `${key} (Custom)`; themeSelect.appendChild(opt); }
   themeSelect.value = config.themePreset || 'gruvbox';
 }
 
-// Color Pickers logic
 const themeSelect = document.getElementById('cfg-theme-preset');
 const bgPicker = document.getElementById('cfg-bg');
 const fgPicker = document.getElementById('cfg-fg');
 
 themeSelect.addEventListener('change', (e) => {
-  const val = e.target.value;
-  config.themePreset = val;
+  const val = e.target.value; config.themePreset = val;
   const themeSource = themes[val] || customThemes[val];
-  if(themeSource) {
-    config.bg = themeSource.bg;
-    config.fg = themeSource.fg;
-    bgPicker.value = config.bg;
-    fgPicker.value = config.fg;
-    rootStyle.setProperty('--bg', config.bg);
-    rootStyle.setProperty('--fg', config.fg);
-  }
+  if(themeSource) { config.bg = themeSource.bg; config.fg = themeSource.fg; bgPicker.value = config.bg; fgPicker.value = config.fg; rootStyle.setProperty('--bg', config.bg); rootStyle.setProperty('--fg', config.fg); }
   saveData();
 });
 
-const onColorChange = () => {
-  themeSelect.value = 'custom';
-  config.themePreset = 'custom';
-  config.bg = bgPicker.value;
-  config.fg = fgPicker.value;
-  rootStyle.setProperty('--bg', config.bg);
-  rootStyle.setProperty('--fg', config.fg);
-  saveData();
-};
+const onColorChange = () => { themeSelect.value = 'custom'; config.themePreset = 'custom'; config.bg = bgPicker.value; config.fg = fgPicker.value; rootStyle.setProperty('--bg', config.bg); rootStyle.setProperty('--fg', config.fg); saveData(); };
 bgPicker.addEventListener('input', onColorChange);
 fgPicker.addEventListener('input', onColorChange);
 
@@ -2042,41 +3501,11 @@ function renderSettingsList() {
     const item = document.createElement('div');
     item.className = 'shortcut-item';
     item.dataset.idx = i;
-    item.innerHTML = `
-      <div class="settings-row">
-        <input type="text" class="set-input set-letter" value="${s.letter || ''}" placeholder="LTR" data-key="letter" maxlength="3">
-        <input type="text" class="set-input set-name" value="${s.name || ''}" placeholder="Name" data-key="name">
-        <button class="del-btn">×</button>
-      </div>
-      <div class="settings-row">
-        <input type="text" class="set-input set-url" value="${s.url || ''}" placeholder="URL (https://...)" data-key="url">
-      </div>
-      <div class="settings-row">
-        <input type="text" class="set-input set-img" value="${s.imgUrl || ''}" placeholder="Icon URL (auto-fetch if empty)" data-key="imgUrl">
-      </div>
-    `;
+    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input set-letter" value="${s.letter || ''}" placeholder="LTR" data-key="letter" maxlength="3"><input type="text" class="set-input set-name" value="${s.name || ''}" placeholder="Name" data-key="name"><button class="del-btn">×</button></div><div class="settings-row"><input type="text" class="set-input set-url" value="${s.url || ''}" placeholder="URL" data-key="url"></div><div class="settings-row"><input type="text" class="set-input set-img" value="${s.imgUrl || ''}" placeholder="Icon URL" data-key="imgUrl"></div>`;
     list.appendChild(item);
   });
-
-  list.querySelectorAll('.set-input').forEach(inp => {
-    inp.addEventListener('input', (e) => {
-      const item = e.target.closest('.shortcut-item');
-      const idx = item.dataset.idx;
-      const key = e.target.dataset.key;
-      shortcuts[idx][key] = e.target.value;
-      saveData();
-    });
-  });
-
-  list.querySelectorAll('.del-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const item = e.target.closest('.shortcut-item');
-      const idx = item.dataset.idx;
-      shortcuts.splice(idx, 1);
-      saveData();
-      renderSettingsList();
-    });
-  });
+  list.querySelectorAll('.set-input').forEach(inp => { inp.addEventListener('input', (e) => { const item = e.target.closest('.shortcut-item'); const idx = item.dataset.idx; const key = e.target.dataset.key; shortcuts[idx][key] = e.target.value; saveData(); }); });
+  list.querySelectorAll('.del-btn').forEach(btn => { btn.addEventListener('click', (e) => { const item = e.target.closest('.shortcut-item'); const idx = item.dataset.idx; shortcuts.splice(idx, 1); saveData(); renderSettingsList(); }); });
 }
 
 function renderEnginesList() {
@@ -2086,74 +3515,46 @@ function renderEnginesList() {
     const item = document.createElement('div');
     item.className = 'engine-item';
     item.dataset.idx = i;
-    item.innerHTML = `
-      <div class="settings-row">
-        <input type="text" class="set-input set-name" value="${eng.name || ''}" placeholder="Name" data-key="name" style="flex: 0 0 30%;">
-        <input type="text" class="set-input set-url" value="${eng.query || ''}" placeholder="Query URL (e.g. https://google.com/search?q=)" data-key="query">
-        <button class="del-btn">×</button>
-      </div>
-    `;
+    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input set-name" value="${eng.name || ''}" placeholder="Name" data-key="name" style="flex: 0 0 30%;"><input type="text" class="set-input set-url" value="${eng.query || ''}" placeholder="Query URL" data-key="query"><button class="del-btn">×</button></div>`;
     list.appendChild(item);
   });
-
-  list.querySelectorAll('.engine-item .set-input').forEach(inp => {
-    inp.addEventListener('input', (e) => {
-      const item = e.target.closest('.engine-item');
-      const idx = item.dataset.idx;
-      const key = e.target.dataset.key;
-      config.engines[idx][key] = e.target.value;
-      saveData();
-      renderEngines();
-    });
-  });
-
-  list.querySelectorAll('.engine-item .del-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const item = e.target.closest('.engine-item');
-      const idx = item.dataset.idx;
-      config.engines.splice(idx, 1);
-      if(currentEngineIdx >= config.engines.length) currentEngineIdx = 0;
-      saveData();
-      renderEnginesList();
-      renderEngines();
-    });
-  });
+  list.querySelectorAll('.engine-item .set-input').forEach(inp => { inp.addEventListener('input', (e) => { const item = e.target.closest('.engine-item'); const idx = item.dataset.idx; const key = e.target.dataset.key; config.engines[idx][key] = e.target.value; saveData(); renderEngines(); }); });
+  list.querySelectorAll('.engine-item .del-btn').forEach(btn => { btn.addEventListener('click', (e) => { const item = e.target.closest('.engine-item'); const idx = item.dataset.idx; config.engines.splice(idx, 1); if(currentEngineIdx >= config.engines.length) currentEngineIdx = 0; saveData(); renderEnginesList(); renderEngines(); }); });
 }
 
-document.getElementById('add-shortcut').addEventListener('click', () => {
-  shortcuts.push({ name: '', url: '', letter: '', imgUrl: '' });
-  saveData();
-  renderSettingsList();
-});
+function renderCustomButtonsList() {
+  const list = document.getElementById('custom-buttons-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!config.customButtons) config.customButtons = [];
+  config.customButtons.forEach((btn, i) => {
+    const item = document.createElement('div');
+    item.className = 'custom-btn-item';
+    item.dataset.idx = i;
+    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input" value="${btn.name || ''}" placeholder="Name" data-key="name" style="flex: 1;"><select class="set-input" data-key="position" style="flex: 0 0 120px;"><option value="left" ${btn.position === 'left' ? 'selected' : ''}>Left</option><option value="top-right" ${btn.position === 'top-right' ? 'selected' : ''}>Top Right</option><option value="bottom" ${btn.position === 'bottom' ? 'selected' : ''}>Bottom</option><option value="bottom-right" ${btn.position === 'bottom-right' ? 'selected' : ''}>Btm-Right</option></select><button class="del-btn">×</button></div><div class="settings-row"><input type="text" class="set-input" value="${btn.url || ''}" placeholder="URL" data-key="url"></div><div class="settings-row"><input type="text" class="set-input" value="${btn.icon || ''}" placeholder="Icon URL" data-key="icon"></div>`;
+    list.appendChild(item);
+  });
+  list.querySelectorAll('.set-input').forEach(inp => { const handler = (e) => { const item = e.target.closest('.custom-btn-item'); const idx = parseInt(item.dataset.idx); const key = e.target.dataset.key; config.customButtons[idx][key] = e.target.value; saveData(); renderCustomButtons(); }; inp.addEventListener('input', handler); inp.addEventListener('change', handler); });
+  list.querySelectorAll('.del-btn').forEach(btn => { btn.addEventListener('click', (e) => { const item = e.target.closest('.custom-btn-item'); const idx = parseInt(item.dataset.idx); config.customButtons.splice(idx, 1); saveData(); renderCustomButtonsList(); renderCustomButtons(); }); });
+}
 
-// --- Save & Revert ---
+document.getElementById('add-shortcut').addEventListener('click', () => { shortcuts.push({ name: '', url: '', letter: '', imgUrl: '' }); saveData(); renderSettingsList(); });
+
 function saveData() {
   localStorage.setItem('start-shortcuts', JSON.stringify(shortcuts));
   localStorage.setItem('start-config', JSON.stringify(config));
 }
 
-document.getElementById('save-settings').addEventListener('click', () => {
-  applyConfig();
-  renderGrid();
-  renderCustomWidget();
-  closeSidebar();
-});
+document.getElementById('save-settings').addEventListener('click', () => { applyConfig(); renderGrid(); renderCustomWidget(); renderCustomButtons(); renderClockStructure(); updateClock(); closeSidebar(); });
 
 document.getElementById('btn-revert').addEventListener('click', () => {
-  if(!confirm("Are you sure you want to revert to the default DesignT configuration?")) return;
-  config = {...defaultConfig};
-  shortcuts = [...defaultShortcuts];
-  customThemes = {};
-  localStorage.removeItem('start-custom-themes');
-  saveData();
-  populateSettings(); 
-  applyConfig();
-  renderGrid();
-  renderEngines();
-  renderCustomWidget();
+  if(!confirm("Revert to default configuration?")) return;
+  config = {...defaultConfig}; shortcuts = [...defaultShortcuts]; customThemes = {};
+  localStorage.removeItem('start-custom-themes'); localStorage.removeItem('start-focus-mode');
+  saveData(); populateSettings(); applyConfig(); renderGrid(); renderEngines(); renderCustomWidget(); renderCustomButtons(); renderClockStructure(); updateClock();
+  body.classList.remove('focus-mode');
 });
 
-// Boot up
 init();
 </script>
 
