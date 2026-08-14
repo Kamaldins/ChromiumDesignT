@@ -47,7 +47,6 @@
   --focus-accent: #fabd2f;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  /* NEW: Independent opacity variables */
   --search-opacity: 1;
   --suggestions-opacity: 1;
   --tile-opacity: 1;
@@ -204,29 +203,41 @@ body::before {
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
-.clock-style-weatherIntegrated { gap: 16px; }
+
+/* FIXED: Weather Integrated Clock - proper icon sizing & alignment */
+.clock-style-weatherIntegrated {
+  gap: 14px;
+  align-items: center;
+}
 .clock-style-weatherIntegrated .clock-time {
   font-size: var(--clock-size);
   font-weight: bold;
   letter-spacing: 0.1em;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 .clock-style-weatherIntegrated .clock-weather-mini {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: calc(var(--clock-size) * 0.7);
   font-weight: 600;
   white-space: nowrap;
+  line-height: 1;
 }
 .clock-style-weatherIntegrated .clock-weather-mini img {
-  width: calc(var(--clock-size) * 1.5);
-  height: calc(var(--clock-size) * 1.5);
+  width: calc(var(--clock-size) * 2.5);
+  height: calc(var(--clock-size) * 2.5);
+  min-width: 28px;
+  min-height: 28px;
   object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 .clock-style-weatherIntegrated .clock-weather-emoji {
-  font-size: calc(var(--clock-size) * 1.2);
+  font-size: calc(var(--clock-size) * 1.5);
   display: none;
+  line-height: 1;
 }
 .clock-style-analog { gap: 16px; }
 .clock-style-analog.date-top { flex-direction: column-reverse; }
@@ -328,7 +339,6 @@ body.focus-mode .focus-mode-indicator {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Unified Focus Mode - hides all distractions */
 body.focus-mode .grid,
 body.focus-mode .search-wrap,
 body.focus-mode .center-btn-wrap,
@@ -404,7 +414,6 @@ body.focus-mode .focus-exit-hint {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Focus Exit Button - always visible on mobile, hover on desktop */
 .focus-exit-btn {
   position: fixed;
   top: 20px;
@@ -722,7 +731,6 @@ body:not(.no-anim) .center-btn:hover {
 .search-input::placeholder { color: var(--search-text); opacity: 0.6; }
 .search-input:focus::placeholder { color: var(--search-bg); opacity: 0.6; }
 
-/* Suggestions integrated into searchbar with same design */
 .search-suggestions {
   position: absolute;
   top: 100%;
@@ -1292,8 +1300,40 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border: none;
 }
+
+/* FIXED: Number input - remove ugly default spinner arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.num-input {
+  width: 70px;
+  padding: 8px 12px;
+  text-align: center;
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent);
+  border-radius: var(--r-sm);
+  color: var(--fg);
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.num-input:focus {
+  border-color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 10%, transparent);
+  outline: none;
+}
+.num-input:hover {
+  border-color: color-mix(in srgb, var(--fg) 40%, transparent);
+}
+
 .range-wrap { display: flex; gap: 12px; align-items: center; }
-.num-input { width: 70px; padding: 6px; text-align: center; }
 select.set-input { cursor: pointer; background: var(--bg); }
 .checkbox-wrap {
   display: flex;
@@ -1420,6 +1460,68 @@ select.set-input { cursor: pointer; background: var(--bg); }
 .shadcn-copy-btn svg { width: 14px; height: 14px; }
 .del-btn { background: transparent; border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); color: var(--fg); cursor: pointer; padding: 8px 12px; font-size: 14px; font-weight: bold; flex: 0 0 auto; border-radius: var(--r-sm); }
 .del-btn:hover { background: #ff4444; color: var(--bg); border-color: #ff4444; }
+
+/* NEW: Opacity preset quick-click buttons */
+.opacity-presets {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  width: 100%;
+}
+.opacity-preset-btn {
+  flex: 1;
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
+  color: var(--fg);
+  padding: 6px 0;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+  font-family: inherit;
+  text-align: center;
+}
+.opacity-preset-btn:hover {
+  background: color-mix(in srgb, var(--fg) 15%, transparent);
+  border-color: color-mix(in srgb, var(--fg) 30%, transparent);
+}
+.opacity-preset-btn.active {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+
+/* NEW: Quick action button groups for settings */
+.quick-btn-group {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.quick-btn {
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
+  color: var(--fg);
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+  font-family: inherit;
+  text-align: center;
+  min-width: 36px;
+}
+.quick-btn:hover {
+  background: color-mix(in srgb, var(--fg) 15%, transparent);
+  border-color: color-mix(in srgb, var(--fg) 30%, transparent);
+}
+.quick-btn.active {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
 
 /* =========================================
    MOBILE NAVIGATION BAR
@@ -1619,7 +1721,6 @@ select.set-input { cursor: pointer; background: var(--bg); }
     --search-y: 18px;
   }
   
-  /* Lock scrolling - full screen, no scroll */
   html, body {
     position: fixed;
     top: 0;
@@ -1640,12 +1741,10 @@ select.set-input { cursor: pointer; background: var(--bg); }
     height: 100dvh;
     padding: calc(10px + var(--safe-top)) 10px calc(70px + var(--safe-bottom));
     overflow: hidden;
-    /* Search bar higher, not centered */
     justify-content: flex-start;
     padding-top: calc(30px + var(--safe-top));
   }
   
-  /* Larger, more visible search bar on mobile */
   .search-input {
     font-size: 16px;
     padding: 16px 20px;
@@ -1655,7 +1754,6 @@ select.set-input { cursor: pointer; background: var(--bg); }
   }
   .search-input::placeholder { opacity: 0.5; }
   
-  /* Suggestions dropdown - mobile friendly, integrated with searchbar */
   .search-suggestions {
     max-height: 280px;
     border-width: 2px;
@@ -1684,7 +1782,6 @@ select.set-input { cursor: pointer; background: var(--bg); }
   .credits, .hint { display: none; }
   .floating-btn-group { display: none; }
   
-  /* Show mobile nav */
   .mobile-nav { display: flex; }
   
   .sidebar { max-width: 100%; border-left: none; }
@@ -1695,27 +1792,31 @@ select.set-input { cursor: pointer; background: var(--bg); }
   .custom-float-btn { width: 36px; height: 36px; font-size: 14px; }
   .custom-float-btn img { width: 18px; height: 18px; }
   
-  /* Focus mode - larger note, always visible exit */
   body.focus-mode .focus-note { font-size: 22px; padding: 12px 20px; }
   body.focus-mode .focus-exit-hint { display: none; }
   .focus-exit-btn { display: flex !important; }
   .pomodoro-timer { font-size: 40px; }
   
-  /* Clock smaller on mobile to fit */
   .clock-container { margin-bottom: 16px; }
   
-  /* Grid fits within viewport */
   .grid { gap: 16px 12px; }
   
-  /* Mobile settings sheet visible */
   .mobile-settings-sheet { display: flex; }
   
-  /* Settings sidebar full width on mobile */
   .sidebar { max-width: 100vw; }
   
-  /* Mobile shortcuts opacity applied */
   .tile-box, .tile-label, .placeholder-box {
     opacity: var(--tile-opacity);
+  }
+  
+  /* Mobile: make opacity preset buttons bigger for touch */
+  .opacity-preset-btn {
+    padding: 10px 0;
+    font-size: 11px;
+  }
+  .quick-btn {
+    padding: 10px 16px;
+    font-size: 12px;
   }
 }
 @media (max-width: 480px) {
@@ -1735,7 +1836,6 @@ select.set-input { cursor: pointer; background: var(--bg); }
   }
 }
 
-/* Touch drag visual feedback */
 .touch-drag-ghost {
   position: fixed;
   pointer-events: none;
@@ -1871,7 +1971,6 @@ select.set-input { cursor: pointer; background: var(--bg); }
   </button>
 </div>
 
-<!-- Mobile Bottom Navigation -->
 <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
   <button class="mobile-nav-btn" id="mobile-search-btn" aria-label="Focus search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
@@ -1891,7 +1990,6 @@ select.set-input { cursor: pointer; background: var(--bg); }
   </button>
 </nav>
 
-<!-- Mobile Settings Bottom Sheet -->
 <div class="sidebar-overlay" id="mobile-sheet-overlay"></div>
 <div class="mobile-settings-sheet" id="mobile-settings-sheet" role="dialog" aria-modal="true" aria-label="Mobile Settings">
   <div class="sheet-handle"></div>
@@ -1899,9 +1997,7 @@ select.set-input { cursor: pointer; background: var(--bg); }
     <span class="sheet-title">Settings</span>
     <button class="sheet-close" id="mobile-sheet-close" aria-label="Close settings">×</button>
   </div>
-  <div class="sheet-content" id="mobile-sheet-content">
-    <!-- Populated by JS -->
-  </div>
+  <div class="sheet-content" id="mobile-sheet-content"></div>
 </div>
 
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -1950,7 +2046,13 @@ select.set-input { cursor: pointer; background: var(--bg); }
             <label class="sub-label" for="cfg-focus-duration-slider" style="margin-top: 10px;">Focus Work Duration (min) <span class="default-val">Default: 25</span></label>
             <div class="range-wrap">
               <input type="range" id="cfg-focus-duration-slider" min="5" max="60" step="5" aria-label="Focus duration">
-              <input type="number" id="cfg-focus-duration-num" class="set-input num-input" aria-label="Focus duration number">
+              <input type="number" id="cfg-focus-duration-num" class="num-input" aria-label="Focus duration number">
+            </div>
+            <div class="quick-btn-group" data-target="focus-duration">
+              <button class="quick-btn" data-val="15">15</button>
+              <button class="quick-btn" data-val="25">25</button>
+              <button class="quick-btn" data-val="45">45</button>
+              <button class="quick-btn" data-val="60">60</button>
             </div>
             <label class="sub-label" for="cfg-focus-accent" style="margin-top: 10px;">Focus Accent Color</label>
             <div class="color-picker">
@@ -1964,61 +2066,125 @@ select.set-input { cursor: pointer; background: var(--bg); }
         <summary class="accordion-summary">Opacity & Transparency</summary>
         <div class="accordion-content">
           <div class="control-group">
-            <span class="sub-label">Control the transparency of each element independently. 1 = fully opaque, 0 = fully transparent.</span>
+            <span class="sub-label">Control the transparency of each element independently. 1 = fully opaque, 0 = fully transparent. Use the quick buttons for easy setting.</span>
+            
             <div class="opacity-control">
               <div class="opacity-label"><span>Search Bar Opacity</span><span class="opacity-value" id="opacity-search-val">100%</span></div>
               <div class="range-wrap">
                 <input type="range" id="cfg-opacity-search-slider" min="0" max="100" step="5" aria-label="Search opacity">
-                <input type="number" id="cfg-opacity-search-num" class="set-input num-input" min="0" max="100">
+                <input type="number" id="cfg-opacity-search-num" class="num-input" min="0" max="100">
+              </div>
+              <div class="opacity-presets" data-target="search">
+                <button class="opacity-preset-btn" data-val="0">0%</button>
+                <button class="opacity-preset-btn" data-val="25">25%</button>
+                <button class="opacity-preset-btn" data-val="50">50%</button>
+                <button class="opacity-preset-btn" data-val="75">75%</button>
+                <button class="opacity-preset-btn" data-val="100">100%</button>
               </div>
             </div>
+            
             <div class="opacity-control">
               <div class="opacity-label"><span>Search Suggestions Opacity</span><span class="opacity-value" id="opacity-suggestions-val">100%</span></div>
               <div class="range-wrap">
                 <input type="range" id="cfg-opacity-suggestions-slider" min="0" max="100" step="5" aria-label="Suggestions opacity">
-                <input type="number" id="cfg-opacity-suggestions-num" class="set-input num-input" min="0" max="100">
+                <input type="number" id="cfg-opacity-suggestions-num" class="num-input" min="0" max="100">
+              </div>
+              <div class="opacity-presets" data-target="suggestions">
+                <button class="opacity-preset-btn" data-val="0">0%</button>
+                <button class="opacity-preset-btn" data-val="25">25%</button>
+                <button class="opacity-preset-btn" data-val="50">50%</button>
+                <button class="opacity-preset-btn" data-val="75">75%</button>
+                <button class="opacity-preset-btn" data-val="100">100%</button>
               </div>
             </div>
+            
             <div class="opacity-control">
               <div class="opacity-label"><span>Shortcuts/Tiles Opacity</span><span class="opacity-value" id="opacity-tile-val">100%</span></div>
               <div class="range-wrap">
                 <input type="range" id="cfg-opacity-tile-slider" min="0" max="100" step="5" aria-label="Tiles opacity">
-                <input type="number" id="cfg-opacity-tile-num" class="set-input num-input" min="0" max="100">
+                <input type="number" id="cfg-opacity-tile-num" class="num-input" min="0" max="100">
+              </div>
+              <div class="opacity-presets" data-target="tile">
+                <button class="opacity-preset-btn" data-val="0">0%</button>
+                <button class="opacity-preset-btn" data-val="25">25%</button>
+                <button class="opacity-preset-btn" data-val="50">50%</button>
+                <button class="opacity-preset-btn" data-val="75">75%</button>
+                <button class="opacity-preset-btn" data-val="100">100%</button>
               </div>
             </div>
+            
             <div class="opacity-control">
               <div class="opacity-label"><span>Weather Widget Opacity</span><span class="opacity-value" id="opacity-weather-val">100%</span></div>
               <div class="range-wrap">
                 <input type="range" id="cfg-opacity-weather-slider" min="0" max="100" step="5" aria-label="Weather opacity">
-                <input type="number" id="cfg-opacity-weather-num" class="set-input num-input" min="0" max="100">
+                <input type="number" id="cfg-opacity-weather-num" class="num-input" min="0" max="100">
+              </div>
+              <div class="opacity-presets" data-target="weather">
+                <button class="opacity-preset-btn" data-val="0">0%</button>
+                <button class="opacity-preset-btn" data-val="25">25%</button>
+                <button class="opacity-preset-btn" data-val="50">50%</button>
+                <button class="opacity-preset-btn" data-val="75">75%</button>
+                <button class="opacity-preset-btn" data-val="100">100%</button>
               </div>
             </div>
+            
             <div class="opacity-control">
               <div class="opacity-label"><span>Custom Buttons Opacity</span><span class="opacity-value" id="opacity-custom-btn-val">100%</span></div>
               <div class="range-wrap">
                 <input type="range" id="cfg-opacity-custom-btn-slider" min="0" max="100" step="5" aria-label="Custom buttons opacity">
-                <input type="number" id="cfg-opacity-custom-btn-num" class="set-input num-input" min="0" max="100">
+                <input type="number" id="cfg-opacity-custom-btn-num" class="num-input" min="0" max="100">
+              </div>
+              <div class="opacity-presets" data-target="custom-btn">
+                <button class="opacity-preset-btn" data-val="0">0%</button>
+                <button class="opacity-preset-btn" data-val="25">25%</button>
+                <button class="opacity-preset-btn" data-val="50">50%</button>
+                <button class="opacity-preset-btn" data-val="75">75%</button>
+                <button class="opacity-preset-btn" data-val="100">100%</button>
               </div>
             </div>
+            
             <div class="opacity-control">
               <div class="opacity-label"><span>Mobile Nav Opacity</span><span class="opacity-value" id="opacity-mobile-nav-val">100%</span></div>
               <div class="range-wrap">
                 <input type="range" id="cfg-opacity-mobile-nav-slider" min="0" max="100" step="5" aria-label="Mobile nav opacity">
-                <input type="number" id="cfg-opacity-mobile-nav-num" class="set-input num-input" min="0" max="100">
+                <input type="number" id="cfg-opacity-mobile-nav-num" class="num-input" min="0" max="100">
+              </div>
+              <div class="opacity-presets" data-target="mobile-nav">
+                <button class="opacity-preset-btn" data-val="0">0%</button>
+                <button class="opacity-preset-btn" data-val="25">25%</button>
+                <button class="opacity-preset-btn" data-val="50">50%</button>
+                <button class="opacity-preset-btn" data-val="75">75%</button>
+                <button class="opacity-preset-btn" data-val="100">100%</button>
               </div>
             </div>
+            
             <div class="opacity-control">
               <div class="opacity-label"><span>Center Button Opacity</span><span class="opacity-value" id="opacity-center-btn-val">100%</span></div>
               <div class="range-wrap">
                 <input type="range" id="cfg-opacity-center-btn-slider" min="0" max="100" step="5" aria-label="Center button opacity">
-                <input type="number" id="cfg-opacity-center-btn-num" class="set-input num-input" min="0" max="100">
+                <input type="number" id="cfg-opacity-center-btn-num" class="num-input" min="0" max="100">
+              </div>
+              <div class="opacity-presets" data-target="center-btn">
+                <button class="opacity-preset-btn" data-val="0">0%</button>
+                <button class="opacity-preset-btn" data-val="25">25%</button>
+                <button class="opacity-preset-btn" data-val="50">50%</button>
+                <button class="opacity-preset-btn" data-val="75">75%</button>
+                <button class="opacity-preset-btn" data-val="100">100%</button>
               </div>
             </div>
+            
             <div class="opacity-control">
               <div class="opacity-label"><span>Custom Widget Opacity</span><span class="opacity-value" id="opacity-custom-widget-val">100%</span></div>
               <div class="range-wrap">
                 <input type="range" id="cfg-opacity-custom-widget-slider" min="0" max="100" step="5" aria-label="Custom widget opacity">
-                <input type="number" id="cfg-opacity-custom-widget-num" class="set-input num-input" min="0" max="100">
+                <input type="number" id="cfg-opacity-custom-widget-num" class="num-input" min="0" max="100">
+              </div>
+              <div class="opacity-presets" data-target="custom-widget">
+                <button class="opacity-preset-btn" data-val="0">0%</button>
+                <button class="opacity-preset-btn" data-val="25">25%</button>
+                <button class="opacity-preset-btn" data-val="50">50%</button>
+                <button class="opacity-preset-btn" data-val="75">75%</button>
+                <button class="opacity-preset-btn" data-val="100">100%</button>
               </div>
             </div>
           </div>
@@ -2041,17 +2207,23 @@ select.set-input { cursor: pointer; background: var(--bg); }
             <label class="sub-label" for="cfg-clock-size-slider" style="margin-top: 10px;">Clock Font Size (px) <span class="default-val">Default: 14</span></label>
             <div class="range-wrap">
               <input type="range" id="cfg-clock-size-slider" min="10" max="48" step="1" aria-label="Clock font size">
-              <input type="number" id="cfg-clock-size-num" class="set-input num-input" aria-label="Clock font size number">
+              <input type="number" id="cfg-clock-size-num" class="num-input" aria-label="Clock font size number">
+            </div>
+            <div class="quick-btn-group" data-target="clock-size">
+              <button class="quick-btn" data-val="14">S</button>
+              <button class="quick-btn" data-val="24">M</button>
+              <button class="quick-btn" data-val="36">L</button>
+              <button class="quick-btn" data-val="48">XL</button>
             </div>
             <label class="sub-label" for="cfg-clock-x-slider" style="margin-top: 10px;">Clock Position X (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-clock-x-slider" min="-500" max="500" step="10" aria-label="Clock position X">
-              <input type="number" id="cfg-clock-x-num" class="set-input num-input" aria-label="Clock position X number">
+              <input type="number" id="cfg-clock-x-num" class="num-input" aria-label="Clock position X number">
             </div>
             <label class="sub-label" for="cfg-clock-y-slider" style="margin-top: 10px;">Clock Position Y (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-clock-y-slider" min="-500" max="500" step="10" aria-label="Clock position Y">
-              <input type="number" id="cfg-clock-y-num" class="set-input num-input" aria-label="Clock position Y number">
+              <input type="number" id="cfg-clock-y-num" class="num-input" aria-label="Clock position Y number">
             </div>
             <label class="sub-label" for="cfg-date-position" style="margin-top: 10px;">Date Position</label>
             <select class="set-input" id="cfg-date-position">
@@ -2103,12 +2275,24 @@ select.set-input { cursor: pointer; background: var(--bg); }
             <label class="sub-label" for="cfg-bg-brightness-slider" style="margin-top: 10px;">Background Brightness</label>
             <div class="range-wrap">
               <input type="range" id="cfg-bg-brightness-slider" min="10" max="100" step="5" aria-label="Background brightness">
-              <input type="number" id="cfg-bg-brightness-num" class="set-input num-input">
+              <input type="number" id="cfg-bg-brightness-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="bg-brightness">
+              <button class="quick-btn" data-val="25">25%</button>
+              <button class="quick-btn" data-val="50">50%</button>
+              <button class="quick-btn" data-val="75">75%</button>
+              <button class="quick-btn" data-val="100">100%</button>
             </div>
             <label class="sub-label" for="cfg-bg-blur-slider" style="margin-top: 10px;">Background Blur</label>
             <div class="range-wrap">
               <input type="range" id="cfg-bg-blur-slider" min="0" max="20" step="1" aria-label="Background blur">
-              <input type="number" id="cfg-bg-blur-num" class="set-input num-input">
+              <input type="number" id="cfg-bg-blur-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="bg-blur">
+              <button class="quick-btn" data-val="0">0</button>
+              <button class="quick-btn" data-val="5">5</button>
+              <button class="quick-btn" data-val="10">10</button>
+              <button class="quick-btn" data-val="20">20</button>
             </div>
             <button class="action-btn secondary" id="cfg-bg-clear" style="margin-top: 8px;">Clear Background Image</button>
           </div>
@@ -2189,7 +2373,14 @@ select.set-input { cursor: pointer; background: var(--bg); }
                 <label class="sub-label" for="cfg-grad-angle-slider">Gradient Angle (deg)</label>
                 <div class="range-wrap">
                   <input type="range" id="cfg-grad-angle-slider" min="0" max="360" step="5">
-                  <input type="number" id="cfg-grad-angle-num" class="set-input num-input">
+                  <input type="number" id="cfg-grad-angle-num" class="num-input">
+                </div>
+                <div class="quick-btn-group" data-target="grad-angle">
+                  <button class="quick-btn" data-val="0">0°</button>
+                  <button class="quick-btn" data-val="45">45°</button>
+                  <button class="quick-btn" data-val="90">90°</button>
+                  <button class="quick-btn" data-val="135">135°</button>
+                  <button class="quick-btn" data-val="180">180°</button>
                 </div>
               </div>
             </div>
@@ -2224,22 +2415,41 @@ select.set-input { cursor: pointer; background: var(--bg); }
             <label class="sub-label" for="cfg-columns-slider">Grid Columns</label>
             <div class="range-wrap">
               <input type="range" id="cfg-columns-slider" min="2" max="12" step="1">
-              <input type="number" id="cfg-columns-num" class="set-input num-input">
+              <input type="number" id="cfg-columns-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="columns">
+              <button class="quick-btn" data-val="3">3</button>
+              <button class="quick-btn" data-val="4">4</button>
+              <button class="quick-btn" data-val="5">5</button>
+              <button class="quick-btn" data-val="6">6</button>
+              <button class="quick-btn" data-val="8">8</button>
             </div>
             <label class="sub-label" for="cfg-grid-gap-slider" style="margin-top: 10px;">Grid Gap (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-grid-gap-slider" min="0" max="200" step="5">
-              <input type="number" id="cfg-grid-gap-num" class="set-input num-input">
+              <input type="number" id="cfg-grid-gap-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="grid-gap">
+              <button class="quick-btn" data-val="10">10</button>
+              <button class="quick-btn" data-val="25">25</button>
+              <button class="quick-btn" data-val="50">50</button>
+              <button class="quick-btn" data-val="100">100</button>
             </div>
             <label class="sub-label" for="cfg-pos-x-slider" style="margin-top: 10px;">Position X (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-pos-x-slider" min="-400" max="400" step="10">
-              <input type="number" id="cfg-pos-x-num" class="set-input num-input">
+              <input type="number" id="cfg-pos-x-num" class="num-input">
             </div>
             <label class="sub-label" for="cfg-pos-y-slider" style="margin-top: 10px;">Position Y (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-pos-y-slider" min="-400" max="400" step="10">
-              <input type="number" id="cfg-pos-y-num" class="set-input num-input">
+              <input type="number" id="cfg-pos-y-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="pos-y">
+              <button class="quick-btn" data-val="0">0</button>
+              <button class="quick-btn" data-val="100">100</button>
+              <button class="quick-btn" data-val="150">150</button>
+              <button class="quick-btn" data-val="250">250</button>
             </div>
             <button class="action-btn secondary" id="reset-layout-btn" style="margin-top: 10px;">Reset Layout Positions</button>
           </div>
@@ -2298,7 +2508,14 @@ select.set-input { cursor: pointer; background: var(--bg); }
             <label class="sub-label" for="cfg-ui-scale-slider" style="margin-top: 10px;">UI Scale (%)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-ui-scale-slider" min="80" max="150" step="5">
-              <input type="number" id="cfg-ui-scale-num" class="set-input num-input">
+              <input type="number" id="cfg-ui-scale-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="ui-scale">
+              <button class="quick-btn" data-val="80">80%</button>
+              <button class="quick-btn" data-val="90">90%</button>
+              <button class="quick-btn" data-val="100">100%</button>
+              <button class="quick-btn" data-val="110">110%</button>
+              <button class="quick-btn" data-val="125">125%</button>
             </div>
           </div>
         </div>
@@ -2336,13 +2553,26 @@ select.set-input { cursor: pointer; background: var(--bg); }
               <label class="sub-label" for="cfg-anim-height-slider">Animation Lift Height (px)</label>
               <div class="range-wrap">
                 <input type="range" id="cfg-anim-height-slider" min="0" max="20" step="1">
-                <input type="number" id="cfg-anim-height-num" class="set-input num-input">
+                <input type="number" id="cfg-anim-height-num" class="num-input">
+              </div>
+              <div class="quick-btn-group" data-target="anim-height">
+                <button class="quick-btn" data-val="0">0</button>
+                <button class="quick-btn" data-val="2">2</button>
+                <button class="quick-btn" data-val="4">4</button>
+                <button class="quick-btn" data-val="8">8</button>
               </div>
             </div>
             <label class="sub-label" for="cfg-radius-slider" style="margin-top: 10px;">Border Radius (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-radius-slider" min="0" max="100" step="1">
-              <input type="number" id="cfg-radius-num" class="set-input num-input">
+              <input type="number" id="cfg-radius-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="radius">
+              <button class="quick-btn" data-val="0">0</button>
+              <button class="quick-btn" data-val="8">8</button>
+              <button class="quick-btn" data-val="16">16</button>
+              <button class="quick-btn" data-val="24">24</button>
+              <button class="quick-btn" data-val="32">32</button>
             </div>
             <label class="sub-label" for="cfg-label-pos" style="margin-top: 10px;">Label Position</label>
             <select class="set-input" id="cfg-label-pos">
@@ -2353,32 +2583,50 @@ select.set-input { cursor: pointer; background: var(--bg); }
             <label class="sub-label" for="cfg-label-size-slider" style="margin-top: 10px;">Label Font Size (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-label-size-slider" min="8" max="20" step="1">
-              <input type="number" id="cfg-label-size-num" class="set-input num-input">
+              <input type="number" id="cfg-label-size-num" class="num-input">
             </div>
             <label class="sub-label" for="cfg-search-width-slider" style="margin-top: 10px;">Search Width (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-search-width-slider" min="300" max="1200" step="10">
-              <input type="number" id="cfg-search-width-num" class="set-input num-input">
+              <input type="number" id="cfg-search-width-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="search-width">
+              <button class="quick-btn" data-val="400">400</button>
+              <button class="quick-btn" data-val="560">560</button>
+              <button class="quick-btn" data-val="700">700</button>
+              <button class="quick-btn" data-val="900">900</button>
             </div>
             <label class="sub-label" for="cfg-search-y-slider" style="margin-top: 10px;">Search Height (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-search-y-slider" min="8" max="40" step="1">
-              <input type="number" id="cfg-search-y-num" class="set-input num-input">
+              <input type="number" id="cfg-search-y-num" class="num-input">
             </div>
             <label class="sub-label" for="cfg-search-z-slider" style="margin-top: 10px;">Search Depth (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-search-z-slider" min="0" max="50" step="1">
-              <input type="number" id="cfg-search-z-num" class="set-input num-input">
+              <input type="number" id="cfg-search-z-num" class="num-input">
             </div>
             <label class="sub-label" for="cfg-tile-size-slider" style="margin-top: 10px;">Tile Size (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-tile-size-slider" min="40" max="120" step="2">
-              <input type="number" id="cfg-tile-size-num" class="set-input num-input">
+              <input type="number" id="cfg-tile-size-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="tile-size">
+              <button class="quick-btn" data-val="48">S</button>
+              <button class="quick-btn" data-val="60">M</button>
+              <button class="quick-btn" data-val="72">L</button>
+              <button class="quick-btn" data-val="96">XL</button>
             </div>
             <label class="sub-label" for="cfg-icon-size-slider" style="margin-top: 10px;">Icon Size (px)</label>
             <div class="range-wrap">
               <input type="range" id="cfg-icon-size-slider" min="16" max="80" step="2">
-              <input type="number" id="cfg-icon-size-num" class="set-input num-input">
+              <input type="number" id="cfg-icon-size-num" class="num-input">
+            </div>
+            <div class="quick-btn-group" data-target="icon-size">
+              <button class="quick-btn" data-val="24">S</button>
+              <button class="quick-btn" data-val="32">M</button>
+              <button class="quick-btn" data-val="36">L</button>
+              <button class="quick-btn" data-val="48">XL</button>
             </div>
           </div>
         </div>
@@ -2483,7 +2731,7 @@ const defaultEngines = [
   { name: 'Google', query: 'https://www.google.com/search?q=' },
   { name: 'GitHub', query: 'https://github.com/search?q=' },
   { name: 'YT', query: 'https://www.youtube.com/results?search_query=' },
-  { name: 'Wiki', query: 'https://en.wikipedia.org/wiki/Special:Search?search=' }
+  { name: 'Wiki', query: 'https://en.wikipedia.org/Special:Search?search=' }
 ];
 
 const themes = {
@@ -2518,7 +2766,7 @@ const scifiImages = [
 ];
 
 // =========================================
-// SEARCH INDEX (for offline + smart matching)
+// SEARCH INDEX
 // =========================================
 const SEARCH_INDEX = [
   { name: 'YouTube', url: 'https://youtube.com', keywords: ['youtube', 'yt', 'tube', 'video'] },
@@ -2577,7 +2825,7 @@ function searchIndex(query) {
 }
 
 // =========================================
-// DEFAULT CONFIG
+// DEFAULT CONFIG (Desktop)
 // =========================================
 const defaultConfig = {
   lang: 'en',
@@ -2651,7 +2899,6 @@ const defaultConfig = {
   clock24h: true,
   useCustomWidget: false,
   customWidgetCode: '<div style="color: var(--fg); font-size: 24px; font-weight: bold;">DesignT</div>',
-  // NEW: Independent opacity values (0-100, where 100 = fully opaque)
   opacitySearch: 100,
   opacitySuggestions: 100,
   opacityTile: 100,
@@ -2663,10 +2910,106 @@ const defaultConfig = {
 };
 
 // =========================================
+// MOBILE DEFAULT CONFIG - Applied on first load when mobile is detected
+// =========================================
+function getMobileDefaultConfig() {
+  return {
+    lang: 'en',
+    uiScale: 90,
+    bg: '#282828',
+    fg: '#ebdbb2',
+    columns: 4,
+    searchWidth: 560,
+    searchY: 16,
+    searchZ: 15,
+    radius: 16,
+    gridGap: 50,
+    posX: 0,
+    posY: 150,
+    showEngines: false,
+    showCredits: true,
+    showGithubBtn: false,
+    showFocusNote: false,
+    showPomodoro: false,
+    showGreeting: true,
+    dblclickFocus: true,
+    focusNoteText: '',
+    focusDuration: 25,
+    focusAccent: '#fabd2f',
+    customButtons: [],
+    themePreset: 'gruvbox',
+    tileSize: 72,
+    iconSize: 36,
+    labelPos: 'column',
+    labelSize: 11,
+    showCenterBtn: false,
+    centerBtnText: 'Launch',
+    centerBtnUrl: 'https://github.com',
+    centerBtnImg: '',
+    fontFamily: "'Open Sans', sans-serif",
+    animations: true,
+    animHeight: 4,
+    useGradient: false,
+    bgGradType: 'linear',
+    bgGrad1: '#1a1a1a',
+    bgGrad2: '#2e2e2e',
+    bgGrad3: '#1a1a1a',
+    bgGradAngle: 45,
+    bgImage: 'https://picsum.photos/seed/1249/1920/1080',
+    bgImageBrightness: 100,
+    bgImageBlur: 0,
+    wallpaperSource: 'picsum',
+    engines: defaultEngines,
+    searchText: 'Search or enter address',
+    searchBg: '',
+    searchTextColor: '',
+    searchBorder: '',
+    showWeather: false,
+    weatherLoc: '',
+    weatherLat: '',
+    weatherLon: '',
+    weatherAutoRefresh: true,
+    weatherX: null,
+    weatherY: 20,
+    weatherRight: 20,
+    weatherW: 170,
+    weatherFS: 13,
+    clockSize: 14,
+    clockTz: '',
+    clockStyle: 'weatherIntegrated',
+    clockX: 0,
+    clockY: 0,
+    datePosition: 'bottom',
+    dateFormat: 'short',
+    showSeconds: true,
+    clock24h: true,
+    useCustomWidget: false,
+    customWidgetCode: '<div style="color: var(--fg); font-size: 24px; font-weight: bold;">DesignT</div>',
+    opacitySearch: 85,
+    opacitySuggestions: 100,
+    opacityTile: 85,
+    opacityWeather: 100,
+    opacityCustomBtn: 100,
+    opacityMobileNav: 100,
+    opacityCenterBtn: 100,
+    opacityCustomWidget: 100
+  };
+}
+
+// =========================================
 // STATE
 // =========================================
 let shortcuts = JSON.parse(localStorage.getItem('start-shortcuts')) || [...defaultShortcuts];
-let config = { ...defaultConfig, ...(JSON.parse(localStorage.getItem('start-config')) || {}) };
+
+// Detect mobile on first run and apply mobile defaults
+const isFirstRun = !localStorage.getItem('start-config');
+if (isFirstRun && isMobile()) {
+  config = getMobileDefaultConfig();
+  localStorage.setItem('start-config', JSON.stringify(config));
+} else {
+  config = { ...defaultConfig, ...(JSON.parse(localStorage.getItem('start-config')) || {}) };
+}
+
 if (!config.customButtons) config.customButtons = [];
 if (config.showGithubBtn === undefined) config.showGithubBtn = true;
 if (!config.lang) config.lang = 'en';
@@ -2680,7 +3023,6 @@ if (!config.focusAccent) config.focusAccent = '#fabd2f';
 if (!config.wallpaperSource) config.wallpaperSource = 'nature';
 if (!config.bgImage) config.bgImage = natureImages[0];
 if (config.weatherAutoRefresh === undefined) config.weatherAutoRefresh = true;
-// NEW: Initialize opacity values
 if (config.opacitySearch === undefined) config.opacitySearch = 100;
 if (config.opacitySuggestions === undefined) config.opacitySuggestions = 100;
 if (config.opacityTile === undefined) config.opacityTile = 100;
@@ -2689,6 +3031,7 @@ if (config.opacityCustomBtn === undefined) config.opacityCustomBtn = 100;
 if (config.opacityMobileNav === undefined) config.opacityMobileNav = 100;
 if (config.opacityCenterBtn === undefined) config.opacityCenterBtn = 100;
 if (config.opacityCustomWidget === undefined) config.opacityCustomWidget = 100;
+
 let customThemes = JSON.parse(localStorage.getItem('start-custom-themes')) || {};
 let currentEngineIdx = 0;
 let globalWeatherData = null;
@@ -2730,7 +3073,6 @@ const mobileSearchBtn = document.getElementById('mobile-search-btn');
 const mobileFocusBtn = document.getElementById('mobile-focus-btn');
 const mobileAddShortcut = document.getElementById('mobile-add-shortcut');
 
-// Mobile touch fix
 let touchMoved = false;
 document.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true, capture: true });
 document.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true, capture: true });
@@ -3145,6 +3487,7 @@ function init() {
   bindTouchDragDrop();
   bindMobileUI();
   bindOpacityControls();
+  bindQuickButtons();
   updateOfflineStatus();
   updateCacheStatus();
   registerServiceWorker();
@@ -3183,13 +3526,11 @@ function handleWindowResize() {
 
 // =========================================
 // FOCUS MODE TRIGGERS
-// Only trigger on clock double-click, NOT main content
 // =========================================
 function bindFocusModeTriggers() {
   let lastTouchTime = 0;
   document.addEventListener('touchend', () => { lastTouchTime = Date.now(); }, { passive: true, capture: true });
   
-  // Only trigger on clock double-click, not on main content wrapper
   clockContainer.addEventListener('dblclick', (e) => {
     if (!config.dblclickFocus) return;
     if (Date.now() - lastTouchTime < 500) return;
@@ -3232,19 +3573,15 @@ function bindKeyboardShortcuts() {
 }
 
 // =========================================
-// SEARCH AUTOCOMPLETE - Uses Wikipedia opensearch API (CORS-friendly)
-// + DuckDuckGo as fallback. Also uses search engine for live results.
-// Results include favicons from the integrated favicon service.
+// SEARCH AUTOCOMPLETE
 // =========================================
 let searchSuggestTimeout;
 let currentSuggestionIdx = -1;
 let currentSuggestions = [];
 
-// Fetch suggestions from Wikipedia opensearch (reliable CORS) + DuckDuckGo
 async function fetchLiveSuggestions(query) {
   const suggestions = new Set();
   
-  // 1. Wikipedia opensearch API (CORS-enabled with origin=*)
   try {
     const wikiUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=8&namespace=0&format=json&origin=*`;
     const wikiRes = await fetchWithTimeout(wikiUrl, 4000);
@@ -3254,9 +3591,8 @@ async function fetchLiveSuggestions(query) {
         wikiData[1].forEach(s => suggestions.add(s));
       }
     }
-  } catch (e) { /* silent fail */ }
+  } catch (e) { }
   
-  // 2. DuckDuckGo autocomplete (sometimes works, sometimes CORS-blocked)
   try {
     const ddgUrl = `https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}&type=list`;
     const ddgRes = await fetchWithTimeout(ddgUrl, 3000);
@@ -3266,7 +3602,7 @@ async function fetchLiveSuggestions(query) {
         ddgData[1].forEach(s => suggestions.add(s));
       }
     }
-  } catch (e) { /* silent fail - CORS */ }
+  } catch (e) { }
   
   return Array.from(suggestions);
 }
@@ -3284,16 +3620,13 @@ function bindSearchAutocomplete() {
       return;
     }
     searchSuggestTimeout = setTimeout(async () => {
-      // Show local index suggestions immediately (instant)
       const indexSuggestions = getIndexSuggestions(query);
       if (indexSuggestions.length > 0) {
         showSearchSuggestions(indexSuggestions, query);
       }
       
-      // Then fetch live suggestions from Wikipedia + DuckDuckGo
       try {
         const liveSuggestions = await fetchLiveSuggestions(query);
-        // Merge: index first (starred), then live, deduplicated
         const merged = [...new Set([...indexSuggestions, ...liveSuggestions])].slice(0, 10);
         if (merged.length > 0) {
           showSearchSuggestions(merged, query);
@@ -3357,10 +3690,8 @@ function showOfflineSuggestions(query) {
   }
 }
 
-// Show search suggestions with favicons from integrated favicon service
 function showSearchSuggestions(suggestions, query = '') {
   searchSuggestions.innerHTML = '';
-  // Normalize suggestions to objects with text/url/type
   currentSuggestions = suggestions.map(s => {
     if (typeof s === 'string') {
       return { text: s, url: null, type: 'search' };
@@ -3375,20 +3706,16 @@ function showSearchSuggestions(suggestions, query = '') {
     item.type = 'button';
     item.className = 'search-suggestion-item';
     
-    // Favicon container
     const faviconWrap = document.createElement('span');
     faviconWrap.className = 'suggestion-favicon';
     
-    // Determine the favicon URL based on suggestion type
     let faviconUrl = '';
     let iconChar = '🔍';
     
     if (s.type === 'shortcut' || s.type === 'index') {
-      // Use the integrated favicon service for known sites
       faviconUrl = getFaviconUrl(s.url);
       iconChar = s.type === 'shortcut' ? '★' : '▣';
     } else {
-      // For search suggestions, try to extract a domain or use search icon
       iconChar = '🔍';
     }
     
@@ -3405,12 +3732,10 @@ function showSearchSuggestions(suggestions, query = '') {
       faviconWrap.textContent = iconChar;
     }
     
-    // Suggestion text
     const textEl = document.createElement('span');
     textEl.className = 'suggestion-text';
     textEl.textContent = s.text;
     
-    // Arrow icon
     const arrow = document.createElement('span');
     arrow.className = 'suggestion-arrow';
     arrow.textContent = '↵';
@@ -3420,13 +3745,11 @@ function showSearchSuggestions(suggestions, query = '') {
     item.appendChild(arrow);
     item.setAttribute('role', 'option');
     
-    // Use pointerdown for touch, mousedown for mouse
     const selectSuggestion = (e) => {
       e.preventDefault();
       e.stopPropagation();
       searchInput.value = s.text;
       hideSearchSuggestions();
-      // If it's a known site, go directly to it
       if (s.url && (s.type === 'shortcut' || s.type === 'index')) {
         window.location.href = s.url;
       } else {
@@ -3460,7 +3783,6 @@ function updateSuggestionHighlight() {
 
 // =========================================
 // TOUCH DRAG-AND-DROP FOR SHORTCUTS
-// (HTML5 DnD doesn't work on touch - custom implementation)
 // =========================================
 function bindTouchDragDrop() {
   let touchDragTile = null;
@@ -3469,12 +3791,11 @@ function bindTouchDragDrop() {
   let touchStartY = 0;
   let touchDraggedIndex = -1;
   let touchMoved = false;
-  const DRAG_THRESHOLD = 10; // pixels before drag starts
+  const DRAG_THRESHOLD = 10;
   
   grid.addEventListener('touchstart', (e) => {
     const tile = e.target.closest('.tile-wrap');
     if (!tile) return;
-    // Don't start drag if tapping the burger menu
     if (e.target.closest('.tile-burger') || e.target.closest('.tile-drop')) return;
     
     const touch = e.touches[0];
@@ -3491,10 +3812,8 @@ function bindTouchDragDrop() {
     const dx = touch.clientX - touchStartX;
     const dy = touch.clientY - touchStartY;
     
-    // Check if moved beyond threshold to start dragging
     if (!touchMoved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
       touchMoved = true;
-      // Create ghost element
       const rect = touchDragTile.getBoundingClientRect();
       touchGhost = touchDragTile.cloneNode(true);
       touchGhost.classList.add('touch-drag-ghost');
@@ -3504,25 +3823,20 @@ function bindTouchDragDrop() {
       touchGhost.style.top = rect.top + 'px';
       document.body.appendChild(touchGhost);
       touchDragTile.classList.add('dragging');
-      // Prevent scrolling
       e.preventDefault();
     }
     
     if (touchMoved && touchGhost) {
       e.preventDefault();
-      // Move ghost to finger position (centered)
       touchGhost.style.left = (touch.clientX - touchGhost.offsetWidth / 2) + 'px';
       touchGhost.style.top = (touch.clientY - touchGhost.offsetHeight / 2) + 'px';
       
-      // Hide ghost temporarily to find element under finger
       touchGhost.style.display = 'none';
       const elemUnder = document.elementFromPoint(touch.clientX, touch.clientY);
       touchGhost.style.display = '';
       
-      // Remove all drag-over highlights
       document.querySelectorAll('.tile-wrap.drag-over').forEach(t => t.classList.remove('drag-over'));
       
-      // Highlight target tile
       if (elemUnder) {
         const targetTile = elemUnder.closest('.tile-wrap');
         if (targetTile && targetTile !== touchDragTile) {
@@ -3540,13 +3854,11 @@ function bindTouchDragDrop() {
       touchGhost.style.display = 'none';
       const elemUnder = document.elementFromPoint(touch.clientX, touch.clientY);
       
-      // Cleanup
       if (touchGhost) touchGhost.remove();
       touchGhost = null;
       touchDragTile.classList.remove('dragging');
       document.querySelectorAll('.tile-wrap.drag-over').forEach(t => t.classList.remove('drag-over'));
       
-      // Find target and reorder
       if (elemUnder) {
         const targetTile = elemUnder.closest('.tile-wrap');
         if (targetTile && targetTile !== touchDragTile) {
@@ -3567,7 +3879,6 @@ function bindTouchDragDrop() {
     touchMoved = false;
   }, { passive: true });
   
-  // Also handle touchcancel
   grid.addEventListener('touchcancel', () => {
     if (touchGhost) touchGhost.remove();
     touchGhost = null;
@@ -3688,6 +3999,7 @@ function updateClockFeelsLike() {
   } else { feelsEl.textContent = 'Feels like --°'; }
 }
 
+// FIXED: Weather integrated clock - uses same icons as main widget, properly sized & aligned
 function updateClockWeather() {
   const iconEl = document.getElementById('clock-weather-icon');
   const emojiEl = document.getElementById('clock-weather-emoji');
@@ -3698,11 +4010,20 @@ function updateClockWeather() {
     const code = globalWeatherData.current.weather_code;
     const isDay = globalWeatherData.current.is_day;
     tempEl.textContent = `${temp}°`;
+    // Use the SAME icon mapping as the main weather widget
     const iconUrl = mapWeatherIcon(code, isDay);
-    if (iconEl.dataset.src !== iconUrl) { iconEl.src = iconUrl; iconEl.dataset.src = iconUrl; }
+    if (iconEl.dataset.src !== iconUrl) { 
+      iconEl.src = iconUrl; 
+      iconEl.dataset.src = iconUrl; 
+    }
     iconEl.style.display = 'block';
     emojiEl.style.display = 'none';
-    iconEl.onerror = () => { iconEl.style.display = 'none'; emojiEl.style.display = 'inline'; emojiEl.textContent = mapWeatherEmoji(code); };
+    // Fallback to emoji if icon fails to load - uses same emoji as main widget
+    iconEl.onerror = () => { 
+      iconEl.style.display = 'none'; 
+      emojiEl.style.display = 'inline'; 
+      emojiEl.textContent = mapWeatherEmoji(code); 
+    };
   } else {
     tempEl.textContent = '--°';
     iconEl.style.display = 'none';
@@ -3740,7 +4061,6 @@ function applyConfig() {
   rootStyle.setProperty('--ui-scale', (config.uiScale || 100) + '%');
   rootStyle.setProperty('--focus-accent', config.focusAccent || '#fabd2f');
   
-  // NEW: Apply independent opacity values
   rootStyle.setProperty('--search-opacity', (config.opacitySearch ?? 100) / 100);
   rootStyle.setProperty('--suggestions-opacity', (config.opacitySuggestions ?? 100) / 100);
   rootStyle.setProperty('--tile-opacity', (config.opacityTile ?? 100) / 100);
@@ -3824,7 +4144,6 @@ function renderGrid() {
     wrap.className = 'tile-wrap';
     wrap.draggable = true;
     wrap.dataset.idx = s.originalIndex;
-    // Desktop drag-and-drop
     wrap.addEventListener('dragstart', (e) => { wrap.classList.add('dragging'); e.dataTransfer.setData('text/plain', s.originalIndex); e.dataTransfer.effectAllowed = 'move'; });
     wrap.addEventListener('dragend', () => { wrap.classList.remove('dragging'); document.querySelectorAll('.tile-wrap').forEach(el => el.classList.remove('drag-over')); });
     wrap.addEventListener('dragover', (e) => { e.preventDefault(); if (!wrap.classList.contains('dragging')) wrap.classList.add('drag-over'); });
@@ -3892,7 +4211,6 @@ function renderGrid() {
       if (isMobile()) {
         openMobileSettings();
         setTimeout(() => {
-          // Switch to shortcuts section in mobile sheet
           const addBtn = mobileSheetContent.querySelector('[data-action="add-shortcut"]');
           if (addBtn) addBtn.click();
         }, 300);
@@ -4278,7 +4596,7 @@ window.quickDelete = function(e, index) {
 }
 
 // =========================================
-// SEARCH SUBMIT - Extracted to function (fixes form.submit() not triggering listener)
+// SEARCH SUBMIT
 // =========================================
 function performSearch() {
   const val = searchInput.value.trim();
@@ -4356,11 +4674,105 @@ function bindOpacityControls() {
       config[opacityMap[key].configKey] = val;
       rootStyle.setProperty(opacityMap[key].cssVar, val / 100);
       if (valEl) valEl.textContent = val + '%';
+      // Update preset button active states
+      const presetGroup = document.querySelector(`.opacity-presets[data-target="${key}"]`);
+      if (presetGroup) {
+        presetGroup.querySelectorAll('.opacity-preset-btn').forEach(b => {
+          b.classList.toggle('active', parseInt(b.dataset.val) === val);
+        });
+      }
       saveData();
     };
     
     slider.addEventListener('input', (e) => update(e.target.value));
     num.addEventListener('input', (e) => update(e.target.value));
+  });
+  
+  // Bind opacity preset buttons - easy click buttons
+  document.querySelectorAll('.opacity-presets').forEach(group => {
+    const target = group.dataset.target;
+    const info = opacityMap[target];
+    if (!info) return;
+    group.querySelectorAll('.opacity-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = parseInt(btn.dataset.val);
+        config[info.configKey] = val;
+        rootStyle.setProperty(info.cssVar, val / 100);
+        const slider = document.getElementById(`cfg-opacity-${target}-slider`);
+        const num = document.getElementById(`cfg-opacity-${target}-num`);
+        const valEl = document.getElementById(info.valEl);
+        if (slider) slider.value = val;
+        if (num) num.value = val;
+        if (valEl) valEl.textContent = val + '%';
+        group.querySelectorAll('.opacity-preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        saveData();
+      });
+    });
+  });
+}
+
+// =========================================
+// QUICK BUTTON BINDINGS (easy click presets for various settings)
+// =========================================
+function bindQuickButtons() {
+  const quickConfigMap = {
+    'focus-duration': { configKey: 'focusDuration', sliderId: 'cfg-focus-duration-slider', numId: 'cfg-focus-duration-num' },
+    'clock-size': { configKey: 'clockSize', sliderId: 'cfg-clock-size-slider', numId: 'cfg-clock-size-num' },
+    'bg-brightness': { configKey: 'bgImageBrightness', sliderId: 'cfg-bg-brightness-slider', numId: 'cfg-bg-brightness-num' },
+    'bg-blur': { configKey: 'bgImageBlur', sliderId: 'cfg-bg-blur-slider', numId: 'cfg-bg-blur-num' },
+    'grad-angle': { configKey: 'bgGradAngle', sliderId: 'cfg-grad-angle-slider', numId: 'cfg-grad-angle-num' },
+    'columns': { configKey: 'columns', sliderId: 'cfg-columns-slider', numId: 'cfg-columns-num' },
+    'grid-gap': { configKey: 'gridGap', sliderId: 'cfg-grid-gap-slider', numId: 'cfg-grid-gap-num' },
+    'pos-y': { configKey: 'posY', sliderId: 'cfg-pos-y-slider', numId: 'cfg-pos-y-num' },
+    'ui-scale': { configKey: 'uiScale', sliderId: 'cfg-ui-scale-slider', numId: 'cfg-ui-scale-num' },
+    'anim-height': { configKey: 'animHeight', sliderId: 'cfg-anim-height-slider', numId: 'cfg-anim-height-num' },
+    'radius': { configKey: 'radius', sliderId: 'cfg-radius-slider', numId: 'cfg-radius-num' },
+    'search-width': { configKey: 'searchWidth', sliderId: 'cfg-search-width-slider', numId: 'cfg-search-width-num' },
+    'tile-size': { configKey: 'tileSize', sliderId: 'cfg-tile-size-slider', numId: 'cfg-tile-size-num' },
+    'icon-size': { configKey: 'iconSize', sliderId: 'cfg-icon-size-slider', numId: 'cfg-icon-size-num' }
+  };
+  
+  document.querySelectorAll('.quick-btn-group').forEach(group => {
+    const target = group.dataset.target;
+    const info = quickConfigMap[target];
+    if (!info) return;
+    
+    group.querySelectorAll('.quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = parseInt(btn.dataset.val);
+        config[info.configKey] = val;
+        const slider = document.getElementById(info.sliderId);
+        const num = document.getElementById(info.numId);
+        if (slider) slider.value = val;
+        if (num) num.value = val;
+        
+        // Apply the change visually
+        if (target === 'clock-size') rootStyle.setProperty('--clock-size', val + 'px');
+        else if (target === 'bg-brightness') rootStyle.setProperty('--bg-brightness', val + '%');
+        else if (target === 'bg-blur') rootStyle.setProperty('--bg-blur', val + 'px');
+        else if (target === 'columns') { rootStyle.setProperty('--columns', val); renderGrid(); }
+        else if (target === 'grid-gap') rootStyle.setProperty('--grid-gap', val + 'px');
+        else if (target === 'pos-y') rootStyle.setProperty('--pos-y', val + 'px');
+        else if (target === 'ui-scale') { rootStyle.setProperty('--ui-scale', val + '%'); }
+        else if (target === 'anim-height') rootStyle.setProperty('--anim-height', val + 'px');
+        else if (target === 'radius') {
+          rootStyle.setProperty('--radius', val + 'px');
+        }
+        else if (target === 'search-width') rootStyle.setProperty('--search-width', val + 'px');
+        else if (target === 'tile-size') { rootStyle.setProperty('--tile-size', val + 'px'); renderGrid(); }
+        else if (target === 'icon-size') { rootStyle.setProperty('--icon-size', val + 'px'); renderGrid(); }
+        else if (target === 'focus-duration') { pomodoroTime = val * 60; pomodoroTotal = pomodoroTime; updatePomodoroDisplay(); }
+        else if (target === 'grad-angle' && config.useGradient) applyConfig();
+        else if (target === 'clock-size') {}
+        
+        // Update active state
+        group.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        saveData();
+      });
+    });
   });
 }
 
@@ -4370,7 +4782,6 @@ function bindOpacityControls() {
 function bindMobileUI() {
   mobileSearchBtn.addEventListener('click', () => {
     searchInput.focus();
-    // On mobile, also try to show keyboard
     if (isMobile()) {
       searchInput.setAttribute('inputmode', 'search');
       setTimeout(() => searchInput.focus(), 100);
@@ -4386,7 +4797,6 @@ function bindMobileUI() {
     saveData();
     renderGrid();
     openMobileSettings();
-    // Scroll to bottom of shortcuts list
     setTimeout(() => {
       const list = mobileSheetContent.querySelector('#mobile-shortcuts-list');
       if (list) {
@@ -4435,8 +4845,27 @@ function populateMobileSettings() {
     `<option value="${k}" ${config.themePreset === k ? 'selected' : ''}>${k.charAt(0).toUpperCase() + k.slice(1)}</option>`
   ).join('');
   
+  // Helper to generate opacity control with preset buttons for mobile
+  function mobileOpacityControl(key, label, configKey) {
+    const val = config[configKey] ?? 100;
+    return `
+      <div class="opacity-control">
+        <div class="opacity-label"><span>${label}</span><span class="opacity-value" id="m-opacity-${key}-val">${val}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-${key}-slider" min="0" max="100" step="5" value="${val}">
+        </div>
+        <div class="opacity-presets" data-mtarget="${key}">
+          <button class="opacity-preset-btn" data-val="0">0%</button>
+          <button class="opacity-preset-btn" data-val="25">25%</button>
+          <button class="opacity-preset-btn" data-val="50">50%</button>
+          <button class="opacity-preset-btn" data-val="75">75%</button>
+          <button class="opacity-preset-btn" data-val="100">100%</button>
+        </div>
+      </div>
+    `;
+  }
+  
   let html = `
-    <!-- Wallpaper Section -->
     <div class="mobile-settings-section">
       <h3>Wallpaper</h3>
       <div class="mobile-wp-grid">
@@ -4448,7 +4877,6 @@ function populateMobileSettings() {
       <input type="file" id="mobile-bg-upload" accept="image/*" style="display:none;">
     </div>
     
-    <!-- Theme Section -->
     <div class="mobile-settings-section">
       <h3>Theme</h3>
       <div class="mobile-setting-row">
@@ -4474,60 +4902,18 @@ function populateMobileSettings() {
       </div>
     </div>
     
-    <!-- Opacity Section -->
     <div class="mobile-settings-section">
       <h3>Opacity & Transparency</h3>
-      <div class="opacity-control">
-        <div class="opacity-label"><span>Search Bar</span><span class="opacity-value" id="m-opacity-search-val">${config.opacitySearch}%</span></div>
-        <div class="range-wrap">
-          <input type="range" id="m-opacity-search-slider" min="0" max="100" step="5" value="${config.opacitySearch}">
-        </div>
-      </div>
-      <div class="opacity-control">
-        <div class="opacity-label"><span>Suggestions</span><span class="opacity-value" id="m-opacity-suggestions-val">${config.opacitySuggestions}%</span></div>
-        <div class="range-wrap">
-          <input type="range" id="m-opacity-suggestions-slider" min="0" max="100" step="5" value="${config.opacitySuggestions}">
-        </div>
-      </div>
-      <div class="opacity-control">
-        <div class="opacity-label"><span>Shortcuts</span><span class="opacity-value" id="m-opacity-tile-val">${config.opacityTile}%</span></div>
-        <div class="range-wrap">
-          <input type="range" id="m-opacity-tile-slider" min="0" max="100" step="5" value="${config.opacityTile}">
-        </div>
-      </div>
-      <div class="opacity-control">
-        <div class="opacity-label"><span>Weather</span><span class="opacity-value" id="m-opacity-weather-val">${config.opacityWeather}%</span></div>
-        <div class="range-wrap">
-          <input type="range" id="m-opacity-weather-slider" min="0" max="100" step="5" value="${config.opacityWeather}">
-        </div>
-      </div>
-      <div class="opacity-control">
-        <div class="opacity-label"><span>Custom Buttons</span><span class="opacity-value" id="m-opacity-custom-btn-val">${config.opacityCustomBtn}%</span></div>
-        <div class="range-wrap">
-          <input type="range" id="m-opacity-custom-btn-slider" min="0" max="100" step="5" value="${config.opacityCustomBtn}">
-        </div>
-      </div>
-      <div class="opacity-control">
-        <div class="opacity-label"><span>Mobile Nav</span><span class="opacity-value" id="m-opacity-mobile-nav-val">${config.opacityMobileNav}%</span></div>
-        <div class="range-wrap">
-          <input type="range" id="m-opacity-mobile-nav-slider" min="0" max="100" step="5" value="${config.opacityMobileNav}">
-        </div>
-      </div>
-      <div class="opacity-control">
-        <div class="opacity-label"><span>Center Button</span><span class="opacity-value" id="m-opacity-center-btn-val">${config.opacityCenterBtn}%</span></div>
-        <div class="range-wrap">
-          <input type="range" id="m-opacity-center-btn-slider" min="0" max="100" step="5" value="${config.opacityCenterBtn}">
-        </div>
-      </div>
-      <div class="opacity-control">
-        <div class="opacity-label"><span>Custom Widget</span><span class="opacity-value" id="m-opacity-custom-widget-val">${config.opacityCustomWidget}%</span></div>
-        <div class="range-wrap">
-          <input type="range" id="m-opacity-custom-widget-slider" min="0" max="100" step="5" value="${config.opacityCustomWidget}">
-        </div>
-      </div>
+      ${mobileOpacityControl('search', 'Search Bar', 'opacitySearch')}
+      ${mobileOpacityControl('suggestions', 'Suggestions', 'opacitySuggestions')}
+      ${mobileOpacityControl('tile', 'Shortcuts', 'opacityTile')}
+      ${mobileOpacityControl('weather', 'Weather', 'opacityWeather')}
+      ${mobileOpacityControl('custom-btn', 'Custom Buttons', 'opacityCustomBtn')}
+      ${mobileOpacityControl('mobile-nav', 'Mobile Nav', 'opacityMobileNav')}
+      ${mobileOpacityControl('center-btn', 'Center Button', 'opacityCenterBtn')}
+      ${mobileOpacityControl('custom-widget', 'Custom Widget', 'opacityCustomWidget')}
     </div>
     
-    <!-- Toggles Section -->
     <div class="mobile-settings-section">
       <h3>Toggles</h3>
       <div class="mobile-setting-row">
@@ -4580,13 +4966,11 @@ function populateMobileSettings() {
       </div>
     </div>
     
-    <!-- Weather Location -->
     <div class="mobile-settings-section">
       <h3>Weather Location</h3>
       <input type="text" class="set-input" id="mobile-weather-loc" placeholder="City name (empty = GPS)" value="${config.weatherLoc || ''}">
     </div>
     
-    <!-- Clock Section -->
     <div class="mobile-settings-section">
       <h3>Clock</h3>
       <div class="mobile-setting-row">
@@ -4620,14 +5004,12 @@ function populateMobileSettings() {
       </div>
     </div>
     
-    <!-- Shortcuts Section -->
     <div class="mobile-settings-section">
       <h3>Shortcuts (long-press to drag on home)</h3>
       <div id="mobile-shortcuts-list"></div>
       <button class="action-btn" data-action="add-shortcut" style="margin-top: 8px;">+ Add Shortcut</button>
     </div>
     
-    <!-- Advanced -->
     <div class="mobile-settings-section">
       <h3>Advanced</h3>
       <button class="action-btn secondary" id="mobile-open-full-settings" style="margin-top: 0;">Open Full Settings</button>
@@ -4638,7 +5020,6 @@ function populateMobileSettings() {
   
   mobileSheetContent.innerHTML = html;
   
-  // Populate shortcuts list
   const shortcutsList = mobileSheetContent.querySelector('#mobile-shortcuts-list');
   shortcuts.forEach((s, i) => {
     const item = document.createElement('div');
@@ -4653,7 +5034,6 @@ function populateMobileSettings() {
     shortcutsList.appendChild(item);
   });
   
-  // Bind shortcut inputs
   shortcutsList.querySelectorAll('input').forEach(inp => {
     inp.addEventListener('input', (e) => {
       const idx = parseInt(e.target.dataset.idx);
@@ -4675,36 +5055,64 @@ function populateMobileSettings() {
     });
   });
   
-  // Bind opacity sliders on mobile
-  const opacityMap = {
-    'search': { configKey: 'opacitySearch', cssVar: '--search-opacity', valEl: 'm-opacity-search-val' },
-    'suggestions': { configKey: 'opacitySuggestions', cssVar: '--suggestions-opacity', valEl: 'm-opacity-suggestions-val' },
-    'tile': { configKey: 'opacityTile', cssVar: '--tile-opacity', valEl: 'm-opacity-tile-val' },
-    'weather': { configKey: 'opacityWeather', cssVar: '--weather-opacity', valEl: 'm-opacity-weather-val' },
-    'custom-btn': { configKey: 'opacityCustomBtn', cssVar: '--custom-btn-opacity', valEl: 'm-opacity-custom-btn-val' },
-    'mobile-nav': { configKey: 'opacityMobileNav', cssVar: '--mobile-nav-opacity', valEl: 'm-opacity-mobile-nav-val' },
-    'center-btn': { configKey: 'opacityCenterBtn', cssVar: '--center-btn-opacity', valEl: 'm-opacity-center-btn-val' },
-    'custom-widget': { configKey: 'opacityCustomWidget', cssVar: '--custom-widget-opacity', valEl: 'm-opacity-custom-widget-val' }
+  // Bind mobile opacity sliders and preset buttons
+  const mOpacityMap = {
+    'search': { configKey: 'opacitySearch', cssVar: '--search-opacity' },
+    'suggestions': { configKey: 'opacitySuggestions', cssVar: '--suggestions-opacity' },
+    'tile': { configKey: 'opacityTile', cssVar: '--tile-opacity' },
+    'weather': { configKey: 'opacityWeather', cssVar: '--weather-opacity' },
+    'custom-btn': { configKey: 'opacityCustomBtn', cssVar: '--custom-btn-opacity' },
+    'mobile-nav': { configKey: 'opacityMobileNav', cssVar: '--mobile-nav-opacity' },
+    'center-btn': { configKey: 'opacityCenterBtn', cssVar: '--center-btn-opacity' },
+    'custom-widget': { configKey: 'opacityCustomWidget', cssVar: '--custom-widget-opacity' }
   };
-  Object.keys(opacityMap).forEach(key => {
+  
+  Object.keys(mOpacityMap).forEach(key => {
     const slider = mobileSheetContent.querySelector(`#m-opacity-${key}-slider`);
     if (!slider) return;
-    slider.addEventListener('input', (e) => {
-      const val = Math.max(0, Math.min(100, Number(e.target.value)));
-      config[opacityMap[key].configKey] = val;
-      rootStyle.setProperty(opacityMap[key].cssVar, val / 100);
-      const valEl = mobileSheetContent.querySelector('#' + opacityMap[key].valEl);
+    const updateVal = (val) => {
+      val = Math.max(0, Math.min(100, Number(val)));
+      config[mOpacityMap[key].configKey] = val;
+      rootStyle.setProperty(mOpacityMap[key].cssVar, val / 100);
+      const valEl = mobileSheetContent.querySelector(`#m-opacity-${key}-val`);
       if (valEl) valEl.textContent = val + '%';
+      // Update preset active states
+      const group = mobileSheetContent.querySelector(`.opacity-presets[data-mtarget="${key}"]`);
+      if (group) {
+        group.querySelectorAll('.opacity-preset-btn').forEach(b => {
+          b.classList.toggle('active', parseInt(b.dataset.val) === val);
+        });
+      }
       saveData();
+    };
+    slider.addEventListener('input', (e) => updateVal(e.target.value));
+  });
+  
+  // Bind mobile opacity preset buttons
+  mobileSheetContent.querySelectorAll('.opacity-presets[data-mtarget]').forEach(group => {
+    const target = group.dataset.mtarget;
+    const info = mOpacityMap[target];
+    if (!info) return;
+    group.querySelectorAll('.opacity-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = parseInt(btn.dataset.val);
+        config[info.configKey] = val;
+        rootStyle.setProperty(info.cssVar, val / 100);
+        const slider = mobileSheetContent.querySelector(`#m-opacity-${target}-slider`);
+        const valEl = mobileSheetContent.querySelector(`#m-opacity-${target}-val`);
+        if (slider) slider.value = val;
+        if (valEl) valEl.textContent = val + '%';
+        group.querySelectorAll('.opacity-preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        saveData();
+      });
     });
   });
   
-  // Bind wallpaper buttons
   mobileSheetContent.querySelectorAll('[data-wp]').forEach(btn => {
     btn.addEventListener('click', () => applyWallpaperPreset(btn.dataset.wp));
   });
   
-  // Bind upload
   const mobileBgUpload = mobileSheetContent.querySelector('#mobile-bg-upload');
   if (mobileBgUpload) {
     mobileBgUpload.addEventListener('change', (e) => {
@@ -4724,7 +5132,6 @@ function populateMobileSettings() {
     });
   }
   
-  // Bind theme select
   const themeSelect = mobileSheetContent.querySelector('#mobile-theme-select');
   if (themeSelect) {
     themeSelect.addEventListener('change', (e) => {
@@ -4741,7 +5148,6 @@ function populateMobileSettings() {
     });
   }
   
-  // Bind color pickers
   const mobileBgColor = mobileSheetContent.querySelector('#mobile-bg-color');
   if (mobileBgColor) {
     mobileBgColor.addEventListener('input', (e) => {
@@ -4761,7 +5167,6 @@ function populateMobileSettings() {
     });
   }
   
-  // Bind toggles
   const toggleMap = {
     'mobile-weather-toggle': (v) => { config.showWeather = v; applyConfig(); if(v && !isOffline) fetchWeather(); },
     'mobile-focus-note-toggle': (v) => { config.showFocusNote = v; focusNoteWrap.classList.toggle('active', v); },
@@ -4782,7 +5187,6 @@ function populateMobileSettings() {
     }
   });
   
-  // Clock style
   const clockStyle = mobileSheetContent.querySelector('#mobile-clock-style');
   if (clockStyle) {
     clockStyle.addEventListener('change', (e) => {
@@ -4793,7 +5197,6 @@ function populateMobileSettings() {
     });
   }
   
-  // Weather location
   const weatherLoc = mobileSheetContent.querySelector('#mobile-weather-loc');
   if (weatherLoc) {
     weatherLoc.addEventListener('change', (e) => {
@@ -4805,7 +5208,6 @@ function populateMobileSettings() {
     });
   }
   
-  // Add shortcut button
   const addBtn = mobileSheetContent.querySelector('[data-action="add-shortcut"]');
   if (addBtn) {
     addBtn.addEventListener('click', () => {
@@ -4824,7 +5226,6 @@ function populateMobileSettings() {
     });
   }
   
-  // Advanced buttons
   const openFull = mobileSheetContent.querySelector('#mobile-open-full-settings');
   if (openFull) {
     openFull.addEventListener('click', () => {
@@ -4952,6 +5353,13 @@ function bindSync(key, cssVar, suffix = '') {
     if(key === 'focus-duration') { pomodoroTime = val * 60; pomodoroTotal = pomodoroTime; updatePomodoroDisplay(); }
     if(key === 'grad-angle' && config.useGradient) applyConfig();
     if(key === 'ui-scale') applyConfig();
+    // Update quick button active states
+    const quickGroup = document.querySelector(`.quick-btn-group[data-target="${key}"]`);
+    if (quickGroup) {
+      quickGroup.querySelectorAll('.quick-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.val) === val);
+      });
+    }
   };
   slider.addEventListener('input', (e) => update(e.target.value));
   num.addEventListener('input', (e) => update(e.target.value));
@@ -5101,428 +5509,4 @@ function bindControls() {
     config.bgImage = natureImages[0]; 
     config.wallpaperSource = 'nature'; 
     document.getElementById('cfg-bg-upload').value = ''; 
-    applyConfig(); 
-    saveData(); 
-    populateSettings(); 
-    showToast('Reset to default (Earth & Nature)');
-  });
-
-  document.getElementById('cfg-engines').addEventListener('change', (e) => { config.showEngines = e.target.checked; enginesDiv.style.display = config.showEngines ? 'flex' : 'none'; saveData(); });
-  document.getElementById('cfg-credits').addEventListener('change', (e) => { config.showCredits = e.target.checked; creditsEl.style.display = config.showCredits ? 'block' : 'none'; saveData(); });
-  document.getElementById('cfg-github-btn').addEventListener('change', (e) => { config.showGithubBtn = e.target.checked; if (githubLink) githubLink.style.display = config.showGithubBtn ? 'flex' : 'none'; saveData(); });
-  document.getElementById('add-custom-btn').addEventListener('click', () => { 
-    if (!config.customButtons) config.customButtons = []; 
-    config.customButtons.push({ name: '', url: '', icon: '', position: 'left' }); 
-    saveData(); renderCustomButtonsList(); renderCustomButtons(); 
-  });
-  document.getElementById('cfg-label-pos').addEventListener('change', (e) => { config.labelPos = e.target.value; rootStyle.setProperty('--label-flex', e.target.value); saveData(); renderGrid(); });
-  document.getElementById('cfg-font-family').addEventListener('change', (e) => { config.fontFamily = e.target.value; rootStyle.setProperty('--font-family', e.target.value); saveData(); });
-  document.getElementById('cfg-anim-toggle').addEventListener('change', (e) => { config.animations = e.target.checked; body.classList.toggle('no-anim', !config.animations); document.getElementById('anim-controls').style.display = config.animations ? 'flex' : 'none'; saveData(); });
-  document.getElementById('cfg-grad-toggle').addEventListener('change', (e) => { config.useGradient = e.target.checked; document.getElementById('gradient-controls').style.display = config.useGradient ? 'flex' : 'none'; applyConfig(); saveData(); });
-  document.getElementById('cfg-grad-type').addEventListener('change', (e) => { config.bgGradType = e.target.value; applyConfig(); saveData(); });
-  ['cfg-grad1', 'cfg-grad2', 'cfg-grad3'].forEach(id => { 
-    document.getElementById(id).addEventListener('input', (e) => { 
-      if(id === 'cfg-grad1') config.bgGrad1 = e.target.value; 
-      if(id === 'cfg-grad2') config.bgGrad2 = e.target.value; 
-      if(id === 'cfg-grad3') config.bgGrad3 = e.target.value; 
-      applyConfig(); saveData(); 
-    }); 
-  });
-  document.getElementById('cfg-center-btn-toggle').addEventListener('change', (e) => { config.showCenterBtn = e.target.checked; centerBtnWrap.classList.toggle('active', config.showCenterBtn); saveData(); });
-  document.getElementById('cfg-center-btn-text').addEventListener('input', (e) => { config.centerBtnText = e.target.value; centerBtnText.innerText = e.target.value; saveData(); });
-  document.getElementById('cfg-center-btn-url').addEventListener('input', (e) => { config.centerBtnUrl = e.target.value; centerBtn.href = e.target.value; saveData(); });
-  document.getElementById('cfg-center-btn-img').addEventListener('input', (e) => { 
-    config.centerBtnImg = e.target.value; 
-    const oldImg = centerBtn.querySelector('img'); 
-    if (oldImg) oldImg.remove(); 
-    if (config.centerBtnImg) { 
-      const img = document.createElement('img'); 
-      img.src = config.centerBtnImg; 
-      img.alt = "Center button icon"; 
-      centerBtn.insertBefore(img, centerBtnText); 
-    } 
-    saveData(); 
-  });
-  
-  document.getElementById('cfg-weather-toggle').addEventListener('change', (e) => { 
-    config.showWeather = e.target.checked; 
-    applyConfig(); 
-    if(config.showWeather && !isOffline) fetchWeather(); 
-    saveData(); 
-  });
-  
-  document.getElementById('cfg-weather-auto-refresh').addEventListener('change', (e) => {
-    config.weatherAutoRefresh = e.target.checked;
-    if (weatherRefreshTimer) {
-      clearInterval(weatherRefreshTimer);
-      weatherRefreshTimer = null;
-    }
-    if (config.weatherAutoRefresh) {
-      weatherRefreshTimer = setInterval(() => {
-        if (config.showWeather && !isOffline) fetchWeather();
-      }, 15 * 60 * 1000);
-    }
-    saveData();
-  });
-  
-  document.getElementById('weather-test-btn').addEventListener('click', () => {
-    fetchWeather();
-    showToast('Testing weather fetch...');
-  });
-  
-  document.getElementById('cfg-search-text').addEventListener('input', (e) => { config.searchText = e.target.value; searchInput.placeholder = e.target.value; saveData(); });
-  document.getElementById('cfg-search-bg').addEventListener('input', (e) => { config.searchBg = e.target.value; rootStyle.setProperty('--search-bg', e.target.value); saveData(); });
-  document.getElementById('cfg-search-text-color').addEventListener('input', (e) => { config.searchTextColor = e.target.value; rootStyle.setProperty('--search-text', e.target.value); saveData(); });
-  document.getElementById('cfg-search-border').addEventListener('input', (e) => { config.searchBorder = e.target.value; rootStyle.setProperty('--search-border', e.target.value); saveData(); });
-  document.getElementById('cfg-custom-widget-toggle').addEventListener('change', (e) => { config.useCustomWidget = e.target.checked; applyConfig(); renderCustomWidget(); saveData(); });
-  document.getElementById('cfg-custom-widget-code').addEventListener('input', (e) => { config.customWidgetCode = e.target.value; saveData(); });
-  document.getElementById('run-custom-widget').addEventListener('click', () => renderCustomWidget());
-  document.getElementById('save-custom-theme').addEventListener('click', () => { 
-    const name = prompt("Enter theme name:"); 
-    if(name) { 
-      customThemes[name] = { bg: config.bg, fg: config.fg }; 
-      localStorage.setItem('start-custom-themes', JSON.stringify(customThemes)); 
-      populateThemes(); 
-      config.themePreset = name; 
-      document.getElementById('cfg-theme-preset').value = name; 
-      saveData(); 
-    } 
-  });
-  document.getElementById('btn-export').addEventListener('click', () => { document.getElementById('cfg-io-area').value = JSON.stringify({ config, shortcuts }); });
-  document.getElementById('btn-copy').addEventListener('click', () => { navigator.clipboard.writeText(document.getElementById('cfg-io-area').value).then(() => showToast("Copied!")); });
-  document.getElementById('btn-import').addEventListener('click', () => { 
-    try { 
-      const data = JSON.parse(document.getElementById('cfg-io-area').value); 
-      if(data.config) config = data.config; 
-      if(data.shortcuts) shortcuts = data.shortcuts; 
-      saveData(); location.reload(); 
-    } catch (e) { showToast("Invalid JSON!"); } 
-  });
-  document.getElementById('add-engine').addEventListener('click', () => { 
-    config.engines.push({ name: 'New', query: 'https://example.com/?q=' }); 
-    saveData(); renderEnginesList(); renderEngines(); 
-  });
-  document.getElementById('cache-resources-btn').addEventListener('click', precacheResources);
-  document.getElementById('clear-cache-btn').addEventListener('click', clearCache);
-}
-
-function populateSettings() {
-  renderSettingsList(); renderEnginesList(); renderCustomButtonsList(); populateThemes();
-  document.getElementById('cfg-language').value = config.lang || 'en';
-  document.getElementById('cfg-bg').value = config.bg;
-  document.getElementById('cfg-fg').value = config.fg;
-  document.getElementById('cfg-font-family').value = config.fontFamily;
-  document.getElementById('cfg-clock-tz').value = config.clockTz || '';
-  document.getElementById('cfg-clock-style').value = config.clockStyle || 'minimal';
-  document.getElementById('cfg-date-position').value = config.datePosition || 'bottom';
-  document.getElementById('cfg-date-format').value = config.dateFormat || 'short';
-  document.getElementById('cfg-show-seconds').checked = config.showSeconds || false;
-  document.getElementById('cfg-clock-24h').checked = config.clock24h !== false;
-  document.getElementById('cfg-focus-note-toggle').checked = config.showFocusNote || false;
-  document.getElementById('cfg-pomodoro-toggle').checked = config.showPomodoro || false;
-  document.getElementById('cfg-greeting-toggle').checked = config.showGreeting !== false;
-  document.getElementById('cfg-dblclick-focus').checked = config.dblclickFocus !== false;
-  document.getElementById('cfg-focus-accent').value = config.focusAccent || '#fabd2f';
-  
-  const setSync = (key, val) => { 
-    const slider = document.getElementById(`cfg-${key}-slider`); 
-    const num = document.getElementById(`cfg-${key}-num`); 
-    if(slider) slider.value = val; 
-    if(num) num.value = val; 
-  };
-  setSync('search-width', config.searchWidth); setSync('search-y', config.searchY); setSync('search-z', config.searchZ);
-  setSync('pos-x', config.posX); setSync('pos-y', config.posY); setSync('columns', config.columns);
-  setSync('radius', config.radius); setSync('grid-gap', config.gridGap); setSync('tile-size', config.tileSize);
-  setSync('icon-size', config.iconSize); setSync('label-size', config.labelSize); setSync('anim-height', config.animHeight);
-  setSync('grad-angle', config.bgGradAngle); setSync('clock-size', config.clockSize);
-  setSync('clock-x', config.clockX || 0); setSync('clock-y', config.clockY || 0);
-  setSync('bg-brightness', config.bgImageBrightness || 100); setSync('bg-blur', config.bgImageBlur || 0);
-  setSync('ui-scale', config.uiScale || 100); setSync('focus-duration', config.focusDuration || 25);
-  
-  // NEW: Set opacity slider/num values
-  const opacityKeys = ['search', 'suggestions', 'tile', 'weather', 'custom-btn', 'mobile-nav', 'center-btn', 'custom-widget'];
-  const opacityConfigKeys = {
-    'search': 'opacitySearch', 'suggestions': 'opacitySuggestions', 'tile': 'opacityTile',
-    'weather': 'opacityWeather', 'custom-btn': 'opacityCustomBtn', 'mobile-nav': 'opacityMobileNav',
-    'center-btn': 'opacityCenterBtn', 'custom-widget': 'opacityCustomWidget'
-  };
-  const opacityValIds = {
-    'search': 'opacity-search-val', 'suggestions': 'opacity-suggestions-val', 'tile': 'opacity-tile-val',
-    'weather': 'opacity-weather-val', 'custom-btn': 'opacity-custom-btn-val', 'mobile-nav': 'opacity-mobile-nav-val',
-    'center-btn': 'opacity-center-btn-val', 'custom-widget': 'opacity-custom-widget-val'
-  };
-  opacityKeys.forEach(key => {
-    const val = config[opacityConfigKeys[key]] ?? 100;
-    const slider = document.getElementById(`cfg-opacity-${key}-slider`);
-    const num = document.getElementById(`cfg-opacity-${key}-num`);
-    const valEl = document.getElementById(opacityValIds[key]);
-    if (slider) slider.value = val;
-    if (num) num.value = val;
-    if (valEl) valEl.textContent = val + '%';
-  });
-  
-  if (config.bgImage) {
-    if (config.wallpaperSource === 'upload') {
-      document.getElementById('upload-btn-text').innerText = 'Change Image';
-      document.getElementById('file-name-display').innerText = 'Custom image loaded';
-    } else if (config.wallpaperSource) {
-      const sourceNames = {
-        'nature': 'Earth & Nature',
-        'scifi': 'Sci-Fi',
-        'nasa': 'NASA APOD',
-        'wikimedia': 'Wikimedia POTD',
-        'picsum': 'Random Photos',
-        'bing': 'Bing POTD'
-      };
-      const sourceName = sourceNames[config.wallpaperSource] || config.wallpaperSource;
-      document.getElementById('upload-btn-text').innerText = `Using: ${sourceName}`;
-      document.getElementById('file-name-display').innerText = `${sourceName} feed active`;
-    } else {
-      document.getElementById('upload-btn-text').innerText = 'Change Image';
-      document.getElementById('file-name-display').innerText = 'Custom image loaded';
-    }
-    document.getElementById('file-name-display').style.display = 'block';
-  } else {
-    document.getElementById('upload-btn-text').innerText = 'Upload Background Image';
-    document.getElementById('file-name-display').style.display = 'none';
-  }
-  
-  document.querySelectorAll('.wallpaper-preset-btn').forEach(btn => {
-    btn.classList.toggle('active-source', btn.dataset.source === config.wallpaperSource);
-  });
-  
-  document.getElementById('cfg-engines').checked = config.showEngines;
-  document.getElementById('cfg-credits').checked = config.showCredits;
-  document.getElementById('cfg-github-btn').checked = config.showGithubBtn !== false;
-  document.getElementById('cfg-label-pos').value = config.labelPos;
-  document.getElementById('cfg-anim-toggle').checked = config.animations;
-  document.getElementById('anim-controls').style.display = config.animations ? 'flex' : 'none';
-  document.getElementById('cfg-grad-toggle').checked = config.useGradient;
-  document.getElementById('gradient-controls').style.display = config.useGradient ? 'flex' : 'none';
-  document.getElementById('cfg-grad-type').value = config.bgGradType;
-  document.getElementById('cfg-grad1').value = config.bgGrad1;
-  document.getElementById('cfg-grad2').value = config.bgGrad2;
-  document.getElementById('cfg-grad3').value = config.bgGrad3;
-  document.getElementById('cfg-center-btn-toggle').checked = config.showCenterBtn;
-  document.getElementById('cfg-center-btn-text').value = config.centerBtnText || '';
-  document.getElementById('cfg-center-btn-url').value = config.centerBtnUrl || '';
-  document.getElementById('cfg-center-btn-img').value = config.centerBtnImg || '';
-  document.getElementById('cfg-weather-toggle').checked = config.showWeather;
-  document.getElementById('cfg-weather-auto-refresh').checked = config.weatherAutoRefresh !== false;
-  document.getElementById('cfg-weather-loc').value = config.weatherLoc || '';
-  document.getElementById('cfg-search-text').value = config.searchText || '';
-  document.getElementById('cfg-search-bg').value = config.searchBg || '#282828';
-  document.getElementById('cfg-search-text-color').value = config.searchTextColor || '#ebdbb2';
-  document.getElementById('cfg-search-border').value = config.searchBorder || '#3c3836';
-  document.getElementById('cfg-custom-widget-toggle').checked = config.useCustomWidget;
-  document.getElementById('cfg-custom-widget-code').value = config.customWidgetCode || '';
-}
-
-function populateThemes() {
-  const themeSelect = document.getElementById('cfg-theme-preset');
-  if (!themeSelect) return;
-  themeSelect.innerHTML = '<option value="custom">Custom</option>';
-  for(const key in themes) { 
-    const opt = document.createElement('option'); 
-    opt.value = key; 
-    opt.innerText = key.charAt(0).toUpperCase() + key.slice(1); 
-    themeSelect.appendChild(opt); 
-  }
-  for(const key in customThemes) { 
-    const opt = document.createElement('option'); 
-    opt.value = key; 
-    opt.innerText = `${key} (Custom)`; 
-    themeSelect.appendChild(opt); 
-  }
-  themeSelect.value = config.themePreset || 'gruvbox';
-}
-
-const themeSelect = document.getElementById('cfg-theme-preset');
-const bgPicker = document.getElementById('cfg-bg');
-const fgPicker = document.getElementById('cfg-fg');
-
-themeSelect.addEventListener('change', (e) => {
-  const val = e.target.value; config.themePreset = val;
-  const themeSource = themes[val] || customThemes[val];
-  if(themeSource) { 
-    config.bg = themeSource.bg; 
-    config.fg = themeSource.fg; 
-    bgPicker.value = config.bg; 
-    fgPicker.value = config.fg; 
-    rootStyle.setProperty('--bg', config.bg); 
-    rootStyle.setProperty('--fg', config.fg); 
-  }
-  saveData();
-});
-
-const onColorChange = () => { 
-  themeSelect.value = 'custom'; 
-  config.themePreset = 'custom'; 
-  config.bg = bgPicker.value; 
-  config.fg = fgPicker.value; 
-  rootStyle.setProperty('--bg', config.bg); 
-  rootStyle.setProperty('--fg', config.fg); 
-  saveData(); 
-};
-bgPicker.addEventListener('input', onColorChange);
-fgPicker.addEventListener('input', onColorChange);
-
-function renderSettingsList() {
-  const list = document.getElementById('settings-list');
-  list.innerHTML = '';
-  shortcuts.forEach((s, i) => {
-    const item = document.createElement('div');
-    item.className = 'shortcut-item';
-    item.dataset.idx = i;
-    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input set-letter" value="${s.letter || ''}" placeholder="LTR" data-key="letter" maxlength="3"><input type="text" class="set-input set-name" value="${s.name || ''}" placeholder="Name" data-key="name"><button class="del-btn">×</button></div><div class="settings-row"><input type="text" class="set-input set-url" value="${s.url || ''}" placeholder="URL" data-key="url"></div><div class="settings-row"><input type="text" class="set-input set-img" value="${s.imgUrl || ''}" placeholder="Icon URL" data-key="imgUrl"></div>`;
-    list.appendChild(item);
-  });
-  list.querySelectorAll('.set-input').forEach(inp => { 
-    inp.addEventListener('input', (e) => { 
-      const item = e.target.closest('.shortcut-item'); 
-      const idx = item.dataset.idx; 
-      const key = e.target.dataset.key; 
-      shortcuts[idx][key] = e.target.value; 
-      saveData(); 
-    }); 
-  });
-  list.querySelectorAll('.del-btn').forEach(btn => { 
-    btn.addEventListener('click', (e) => { 
-      const item = e.target.closest('.shortcut-item'); 
-      const idx = item.dataset.idx; 
-      shortcuts.splice(idx, 1); 
-      saveData(); renderSettingsList(); 
-    }); 
-  });
-}
-
-function renderEnginesList() {
-  const list = document.getElementById('engines-list');
-  list.innerHTML = '';
-  config.engines.forEach((eng, i) => {
-    const item = document.createElement('div');
-    item.className = 'engine-item';
-    item.dataset.idx = i;
-    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input set-name" value="${eng.name || ''}" placeholder="Name" data-key="name" style="flex: 0 0 30%;"><input type="text" class="set-input set-url" value="${eng.query || ''}" placeholder="Query URL" data-key="query"><button class="del-btn">×</button></div>`;
-    list.appendChild(item);
-  });
-  list.querySelectorAll('.engine-item .set-input').forEach(inp => { 
-    inp.addEventListener('input', (e) => { 
-      const item = e.target.closest('.engine-item'); 
-      const idx = item.dataset.idx; 
-      const key = e.target.dataset.key; 
-      config.engines[idx][key] = e.target.value; 
-      saveData(); renderEngines(); 
-    }); 
-  });
-  list.querySelectorAll('.engine-item .del-btn').forEach(btn => { 
-    btn.addEventListener('click', (e) => { 
-      const item = e.target.closest('.engine-item'); 
-      const idx = item.dataset.idx; 
-      config.engines.splice(idx, 1); 
-      if(currentEngineIdx >= config.engines.length) currentEngineIdx = 0; 
-      saveData(); renderEnginesList(); renderEngines(); 
-    }); 
-  });
-}
-
-function renderCustomButtonsList() {
-  const list = document.getElementById('custom-buttons-list');
-  if (!list) return;
-  list.innerHTML = '';
-  if (!config.customButtons) config.customButtons = [];
-  config.customButtons.forEach((btn, i) => {
-    const item = document.createElement('div');
-    item.className = 'custom-btn-item';
-    item.dataset.idx = i;
-    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input" value="${btn.name || ''}" placeholder="Name" data-key="name" style="flex: 1;"><select class="set-input" data-key="position" style="flex: 0 0 120px;"><option value="left" ${btn.position === 'left' ? 'selected' : ''}>Left</option><option value="top-right" ${btn.position === 'top-right' ? 'selected' : ''}>Top Right</option><option value="bottom" ${btn.position === 'bottom' ? 'selected' : ''}>Bottom</option><option value="bottom-right" ${btn.position === 'bottom-right' ? 'selected' : ''}>Btm-Right</option></select><button class="del-btn">×</button></div><div class="settings-row"><input type="text" class="set-input" value="${btn.url || ''}" placeholder="URL" data-key="url"></div><div class="settings-row"><input type="text" class="set-input" value="${btn.icon || ''}" placeholder="Icon URL" data-key="icon"></div>`;
-    list.appendChild(item);
-  });
-  list.querySelectorAll('.set-input').forEach(inp => { 
-    const handler = (e) => { 
-      const item = e.target.closest('.custom-btn-item'); 
-      const idx = parseInt(item.dataset.idx); 
-      const key = e.target.dataset.key; 
-      config.customButtons[idx][key] = e.target.value; 
-      saveData(); renderCustomButtons(); 
-    }; 
-    inp.addEventListener('input', handler); 
-    inp.addEventListener('change', handler); 
-  });
-  list.querySelectorAll('.del-btn').forEach(btn => { 
-    btn.addEventListener('click', (e) => { 
-      const item = e.target.closest('.custom-btn-item'); 
-      const idx = parseInt(item.dataset.idx); 
-      config.customButtons.splice(idx, 1); 
-      saveData(); renderCustomButtonsList(); renderCustomButtons(); 
-    }); 
-  });
-}
-
-document.getElementById('add-shortcut').addEventListener('click', () => { 
-  shortcuts.push({ name: '', url: '', letter: '', imgUrl: '' }); 
-  saveData(); renderSettingsList(); 
-});
-
-function saveData() {
-  localStorage.setItem('start-shortcuts', JSON.stringify(shortcuts));
-  localStorage.setItem('start-config', JSON.stringify(config));
-}
-
-document.getElementById('save-settings').addEventListener('click', () => { 
-  applyConfig(); renderGrid(); renderCustomWidget(); renderCustomButtons(); renderClockStructure(); updateClock(); closeSidebar(); 
-});
-
-document.getElementById('btn-revert').addEventListener('click', () => {
-  if(!confirm("Revert to default configuration?")) return;
-  config = {...defaultConfig}; 
-  shortcuts = [...defaultShortcuts]; 
-  customThemes = {};
-  localStorage.removeItem('start-custom-themes'); 
-  localStorage.removeItem('start-focus-mode');
-  saveData(); populateSettings(); applyConfig(); renderGrid(); renderEngines(); renderCustomWidget(); renderCustomButtons(); renderClockStructure(); updateClock();
-  body.classList.remove('focus-mode');
-});
-
-// =========================================
-// PREVENT MOBILE SCROLL GESTURES
-// =========================================
-// Prevent pull-to-refresh and scroll chaining on mobile
-document.body.addEventListener('touchmove', (e) => {
-  // Allow scrolling inside sidebar and mobile settings sheet
-  if (e.target.closest('.sidebar') || e.target.closest('.mobile-settings-sheet') || e.target.closest('.search-suggestions')) {
-    return;
-  }
-  // Allow weather widget drag
-  if (e.target.closest('.weather-widget')) {
-    return;
-  }
-  // Prevent default scroll on body for mobile
-  if (isMobile()) {
-    e.preventDefault();
-  }
-}, { passive: false });
-
-// Prevent double-tap zoom
-let lastTouchEnd = 0;
-document.addEventListener('touchend', (e) => {
-  const now = Date.now();
-  if (now - lastTouchEnd <= 300) {
-    e.preventDefault();
-  }
-  lastTouchEnd = now;
-}, { passive: false });
-
-// =========================================
-// INITIALIZE ON LOAD
-// =========================================
-init();
-
-// Initial weather fetch if enabled
-if (config.showWeather) {
-  setTimeout(() => fetchWeather(), 500);
-}
-</script>
-
-</body>
-</html>
+    applyConfig();
