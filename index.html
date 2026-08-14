@@ -722,7 +722,7 @@ body:not(.no-anim) .center-btn:hover {
 .search-input::placeholder { color: var(--search-text); opacity: 0.6; }
 .search-input:focus::placeholder { color: var(--search-bg); opacity: 0.6; }
 
-/* Suggestions integrated into searchbar with same design */
+/* Suggestions unified into searchbar with same design */
 .search-suggestions {
   position: absolute;
   top: 100%;
@@ -731,14 +731,15 @@ body:not(.no-anim) .center-btn:hover {
   background: var(--search-bg);
   color: var(--search-text);
   border: 1px solid var(--search-border);
-  border-radius: var(--r-lg);
-  margin-top: 4px;
+  border-top: none;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+  margin-top: -1px; /* Attach seamlessly */
   display: none;
   flex-direction: column;
   z-index: 500;
   overflow: hidden;
   backdrop-filter: blur(8px);
-  box-shadow: 0 var(--search-z) calc(var(--search-z) * 3) rgba(0,0,0,0.3);
+  box-shadow: 0 calc(var(--search-z) * 2) calc(var(--search-z) * 3) rgba(0,0,0,0.3);
   max-height: 300px;
   overflow-y: auto;
   opacity: var(--suggestions-opacity);
@@ -758,13 +759,10 @@ body:not(.no-anim) .center-btn:hover {
   align-items: center;
   gap: 12px;
   width: 100%;
-  opacity: 1;
-}
-.search-suggestion-item:first-child {
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
 }
 .search-suggestion-item:last-child {
-  border-radius: 0 0 var(--r-lg) var(--r-lg);
+  border-bottom-left-radius: var(--r-lg);
+  border-bottom-right-radius: var(--r-lg);
 }
 .search-suggestion-item .suggestion-favicon {
   width: 20px;
@@ -777,7 +775,7 @@ body:not(.no-anim) .center-btn:hover {
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 .search-suggestion-item .suggestion-favicon img {
   width: 16px;
@@ -797,6 +795,32 @@ body:not(.no-anim) .center-btn:hover {
 }
 .search-suggestion-item:hover, .search-suggestion-item.highlighted {
   background: color-mix(in srgb, var(--search-text) 10%, transparent);
+}
+
+/* Unified Opacity Control UI */
+.opacity-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--fg) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  margin-bottom: 10px;
+}
+.opacity-control .opacity-label {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  justify-content: space-between;
+  color: var(--fg);
+}
+.opacity-control .opacity-value {
+  font-size: 10px;
+  opacity: 0.6;
+  font-weight: normal;
 }
 
 .engines {
@@ -898,6 +922,7 @@ body:not(.no-anim) .tile-wrap:hover .tile-box {
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
   pointer-events: none;
+  opacity: var(--tile-opacity);
 }
 .tile-fallback {
   width: var(--icon-size);
@@ -1272,6 +1297,7 @@ input[type="range"] {
   background: color-mix(in srgb, var(--fg) 20%, transparent);
   border-radius: 2px;
   outline: none;
+  width: 100%;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -1590,26 +1616,6 @@ select.set-input { cursor: pointer; background: var(--bg); }
 .mobile-shortcut-edit input:focus { outline: none; border-color: var(--fg); }
 .mobile-shortcut-edit .del-btn { margin-top: 6px; width: 100%; }
 
-.opacity-control {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-.opacity-control .opacity-label {
-  font-size: 11px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  display: flex;
-  justify-content: space-between;
-}
-.opacity-control .opacity-value {
-  font-size: 10px;
-  opacity: 0.6;
-  font-weight: normal;
-}
-
 @media (max-width: 768px) {
   :root {
     --search-width: 92vw;
@@ -1659,7 +1665,8 @@ select.set-input { cursor: pointer; background: var(--bg); }
   .search-suggestions {
     max-height: 280px;
     border-width: 2px;
-    border-radius: var(--r-lg);
+    border-top: none;
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
   }
   .search-suggestion-item {
     padding: 16px 20px;
@@ -1714,7 +1721,7 @@ select.set-input { cursor: pointer; background: var(--bg); }
   .sidebar { max-width: 100vw; }
   
   /* Mobile shortcuts opacity applied */
-  .tile-box, .tile-label, .placeholder-box {
+  .tile-box, .tile-label, .placeholder-box, .tile-img {
     opacity: var(--tile-opacity);
   }
 }
@@ -2486,6 +2493,23 @@ const defaultEngines = [
   { name: 'Wiki', query: 'https://en.wikipedia.org/wiki/Special:Search?search=' }
 ];
 
+// =========================================
+// SEARCH BANGS (Local Router Wrapper)
+// =========================================
+const SEARCH_BANGS = [
+  { bang: '!g', name: 'Google', url: 'https://www.google.com/search?q=' },
+  { bang: '!yt', name: 'YouTube', url: 'https://www.youtube.com/results?search_query=' },
+  { bang: '!w', name: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Special:Search?search=' },
+  { bang: '!gh', name: 'GitHub', url: 'https://github.com/search?q=' },
+  { bang: '!r', name: 'Reddit', url: 'https://www.reddit.com/search/?q=' },
+  { bang: '!tw', name: 'Twitter/X', url: 'https://twitter.com/search?q=' },
+  { bang: '!a', name: 'Amazon', url: 'https://www.amazon.com/s?k=' },
+  { bang: '!imdb', name: 'IMDb', url: 'https://www.imdb.com/find?q=' },
+  { bang: '!npm', name: 'npm', url: 'https://www.npmjs.com/search?q=' },
+  { bang: '!so', name: 'StackOverflow', url: 'https://stackoverflow.com/search?q=' },
+  { bang: '!ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' }
+];
+
 const themes = {
   gruvbox: { bg: '#282828', fg: '#ebdbb2' },
   original: { bg: '#0e0e10', fg: '#e8e8ea' },
@@ -2493,6 +2517,10 @@ const themes = {
   dracula: { bg: '#282a36', fg: '#f8f8f2' },
   mono: { bg: '#000000', fg: '#ffffff' }
 };
+
+// SVG Icons for Search Suggestions
+const SVG_LUPE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>';
+const SVG_BANG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>';
 
 // =========================================
 // WALLPAPER SOURCES
@@ -2592,7 +2620,7 @@ const defaultConfig = {
   gridGap: 50,
   posX: 0,
   posY: 0,
-  showEngines: false,
+  showEngines: true, // Enabled by default to show search engines router
   showCredits: true,
   showGithubBtn: true,
   showFocusNote: false,
@@ -3285,23 +3313,24 @@ function bindSearchAutocomplete() {
     }
     searchSuggestTimeout = setTimeout(async () => {
       // Show local index suggestions immediately (instant)
+      const bangSuggestions = getBangSuggestions(query);
       const indexSuggestions = getIndexSuggestions(query);
-      if (indexSuggestions.length > 0) {
-        showSearchSuggestions(indexSuggestions, query);
+      if (bangSuggestions.length > 0 || indexSuggestions.length > 0) {
+        showSearchSuggestions([...bangSuggestions, ...indexSuggestions], query);
       }
       
       // Then fetch live suggestions from Wikipedia + DuckDuckGo
       try {
         const liveSuggestions = await fetchLiveSuggestions(query);
         // Merge: index first (starred), then live, deduplicated
-        const merged = [...new Set([...indexSuggestions, ...liveSuggestions])].slice(0, 10);
+        const merged = [...new Set([...bangSuggestions, ...indexSuggestions, ...liveSuggestions])].slice(0, 10);
         if (merged.length > 0) {
           showSearchSuggestions(merged, query);
-        } else if (indexSuggestions.length === 0) {
+        } else if (bangSuggestions.length === 0 && indexSuggestions.length === 0) {
           hideSearchSuggestions();
         }
       } catch (err) {
-        if (indexSuggestions.length === 0) {
+        if (bangSuggestions.length === 0 && indexSuggestions.length === 0) {
           hideSearchSuggestions();
         }
       }
@@ -3320,9 +3349,16 @@ function bindSearchAutocomplete() {
       updateSuggestionHighlight();
     } else if (e.key === 'Enter' && currentSuggestionIdx > -1) {
       e.preventDefault();
-      searchInput.value = currentSuggestions[currentSuggestionIdx].text || currentSuggestions[currentSuggestionIdx];
-      hideSearchSuggestions();
-      performSearch();
+      const selected = currentSuggestions[currentSuggestionIdx];
+      if (selected.type === 'bang') {
+        searchInput.value = selected.text.split(' ')[0] + ' ';
+        hideSearchSuggestions();
+        searchInput.focus();
+      } else {
+        searchInput.value = selected.text || selected;
+        hideSearchSuggestions();
+        performSearch();
+      }
     } else if (e.key === 'Escape') {
       hideSearchSuggestions();
     }
@@ -3331,6 +3367,17 @@ function bindSearchAutocomplete() {
   searchInput.addEventListener('blur', () => {
     setTimeout(hideSearchSuggestions, 200);
   });
+}
+
+function getBangSuggestions(query) {
+  if (!query.startsWith('!')) return [];
+  const q = query.toLowerCase().split(' ')[0];
+  if (query.includes(' ')) return []; // If they already typed a space, they are typing the search term
+  return SEARCH_BANGS.filter(b => b.bang.startsWith(q)).map(b => ({
+    text: `${b.bang} ${b.name}`,
+    url: b.url,
+    type: 'bang'
+  }));
 }
 
 function getIndexSuggestions(query) {
@@ -3351,9 +3398,10 @@ function getIndexSuggestions(query) {
 }
 
 function showOfflineSuggestions(query) {
+  const bangSuggestions = getBangSuggestions(query);
   const suggestions = getIndexSuggestions(query);
-  if (suggestions.length > 0) {
-    showSearchSuggestions(suggestions, query);
+  if (suggestions.length > 0 || bangSuggestions.length > 0) {
+    showSearchSuggestions([...bangSuggestions, ...suggestions], query);
   }
 }
 
@@ -3383,13 +3431,17 @@ function showSearchSuggestions(suggestions, query = '') {
     let faviconUrl = '';
     let iconChar = '🔍';
     
-    if (s.type === 'shortcut' || s.type === 'index') {
+    if (s.type === 'bang') {
+      faviconWrap.innerHTML = SVG_BANG;
+      iconChar = '';
+    } else if (s.type === 'shortcut' || s.type === 'index') {
       // Use the integrated favicon service for known sites
       faviconUrl = getFaviconUrl(s.url);
       iconChar = s.type === 'shortcut' ? '★' : '▣';
     } else {
-      // For search suggestions, try to extract a domain or use search icon
-      iconChar = '🔍';
+      // For search suggestions, use the SVG Lupe
+      faviconWrap.innerHTML = SVG_LUPE;
+      iconChar = '';
     }
     
     if (faviconUrl) {
@@ -3398,11 +3450,13 @@ function showSearchSuggestions(suggestions, query = '') {
       img.alt = '';
       img.loading = 'lazy';
       img.onerror = () => {
-        faviconWrap.textContent = iconChar;
+        faviconWrap.innerHTML = '';
+        faviconWrap.textContent = iconChar || '?';
       };
+      faviconWrap.innerHTML = ''; // clear svg if exists
       faviconWrap.appendChild(img);
-    } else {
-      faviconWrap.textContent = iconChar;
+    } else if (!faviconWrap.innerHTML) {
+      faviconWrap.textContent = iconChar || '?';
     }
     
     // Suggestion text
@@ -3424,14 +3478,19 @@ function showSearchSuggestions(suggestions, query = '') {
     const selectSuggestion = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      searchInput.value = s.text;
-      hideSearchSuggestions();
-      // If it's a known site, go directly to it
-      if (s.url && (s.type === 'shortcut' || s.type === 'index')) {
-        window.location.href = s.url;
+      if (s.type === 'bang') {
+        searchInput.value = s.text.split(' ')[0] + ' ';
+        searchInput.focus();
       } else {
-        performSearch();
+        searchInput.value = s.text;
+        // If it's a known site, go directly to it
+        if (s.url && (s.type === 'shortcut' || s.type === 'index')) {
+          window.location.href = s.url;
+        } else {
+          performSearch();
+        }
       }
+      hideSearchSuggestions();
     };
     item.addEventListener('mousedown', selectSuggestion);
     item.addEventListener('touchstart', selectSuggestion, { passive: false });
@@ -4278,12 +4337,34 @@ window.quickDelete = function(e, index) {
 }
 
 // =========================================
-// SEARCH SUBMIT - Extracted to function (fixes form.submit() not triggering listener)
+// SEARCH SUBMIT - Search Engine Router Wrapper
 // =========================================
 function performSearch() {
-  const val = searchInput.value.trim();
+  let val = searchInput.value.trim();
   if (!val) return;
-  
+
+  // 1. Search Bang Router (Local Wrapper)
+  if (val.startsWith('!')) {
+    const parts = val.split(' ');
+    const bangStr = parts[0].toLowerCase();
+    const queryStr = parts.slice(1).join(' ');
+    const foundBang = SEARCH_BANGS.find(b => b.bang === bangStr);
+
+    if (foundBang) {
+      if (foundBang.bang === '!ddg' || !queryStr) {
+        window.location.href = 'https://duckduckgo.com/?q=' + encodeURIComponent(queryStr);
+      } else {
+        window.location.href = foundBang.url + encodeURIComponent(queryStr);
+      }
+      return;
+    } else {
+      // Unrecognized bang, auto-route through DuckDuckGo with q=
+      window.location.href = 'https://duckduckgo.com/?q=' + encodeURIComponent(val);
+      return;
+    }
+  }
+
+  // 2. Explicit URL Check
   const isExplicitUrl = /^https?:\/\//i.test(val);
   const isDomainLike = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z]{2,})+(\/.*)?$/i.test(val) && !val.includes(' ');
   
@@ -4296,15 +4377,16 @@ function performSearch() {
     } catch (e) { }
   }
   
+  // 3. Index Match
   const indexResult = searchIndex(val);
   if (indexResult) {
     window.location.href = indexResult;
     return;
   }
   
+  // 4. Engine Router (Falls back to DDG if no engine selected)
   const engine = config.engines && config.engines[currentEngineIdx];
   if (!engine || !engine.query) {
-    showToast('No engine configured, using DDG');
     window.location.href = 'https://duckduckgo.com/?q=' + encodeURIComponent(val);
     return;
   }
@@ -5344,185 +5426,3 @@ const fgPicker = document.getElementById('cfg-fg');
 themeSelect.addEventListener('change', (e) => {
   const val = e.target.value; config.themePreset = val;
   const themeSource = themes[val] || customThemes[val];
-  if(themeSource) { 
-    config.bg = themeSource.bg; 
-    config.fg = themeSource.fg; 
-    bgPicker.value = config.bg; 
-    fgPicker.value = config.fg; 
-    rootStyle.setProperty('--bg', config.bg); 
-    rootStyle.setProperty('--fg', config.fg); 
-  }
-  saveData();
-});
-
-const onColorChange = () => { 
-  themeSelect.value = 'custom'; 
-  config.themePreset = 'custom'; 
-  config.bg = bgPicker.value; 
-  config.fg = fgPicker.value; 
-  rootStyle.setProperty('--bg', config.bg); 
-  rootStyle.setProperty('--fg', config.fg); 
-  saveData(); 
-};
-bgPicker.addEventListener('input', onColorChange);
-fgPicker.addEventListener('input', onColorChange);
-
-function renderSettingsList() {
-  const list = document.getElementById('settings-list');
-  list.innerHTML = '';
-  shortcuts.forEach((s, i) => {
-    const item = document.createElement('div');
-    item.className = 'shortcut-item';
-    item.dataset.idx = i;
-    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input set-letter" value="${s.letter || ''}" placeholder="LTR" data-key="letter" maxlength="3"><input type="text" class="set-input set-name" value="${s.name || ''}" placeholder="Name" data-key="name"><button class="del-btn">×</button></div><div class="settings-row"><input type="text" class="set-input set-url" value="${s.url || ''}" placeholder="URL" data-key="url"></div><div class="settings-row"><input type="text" class="set-input set-img" value="${s.imgUrl || ''}" placeholder="Icon URL" data-key="imgUrl"></div>`;
-    list.appendChild(item);
-  });
-  list.querySelectorAll('.set-input').forEach(inp => { 
-    inp.addEventListener('input', (e) => { 
-      const item = e.target.closest('.shortcut-item'); 
-      const idx = item.dataset.idx; 
-      const key = e.target.dataset.key; 
-      shortcuts[idx][key] = e.target.value; 
-      saveData(); 
-    }); 
-  });
-  list.querySelectorAll('.del-btn').forEach(btn => { 
-    btn.addEventListener('click', (e) => { 
-      const item = e.target.closest('.shortcut-item'); 
-      const idx = item.dataset.idx; 
-      shortcuts.splice(idx, 1); 
-      saveData(); renderSettingsList(); 
-    }); 
-  });
-}
-
-function renderEnginesList() {
-  const list = document.getElementById('engines-list');
-  list.innerHTML = '';
-  config.engines.forEach((eng, i) => {
-    const item = document.createElement('div');
-    item.className = 'engine-item';
-    item.dataset.idx = i;
-    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input set-name" value="${eng.name || ''}" placeholder="Name" data-key="name" style="flex: 0 0 30%;"><input type="text" class="set-input set-url" value="${eng.query || ''}" placeholder="Query URL" data-key="query"><button class="del-btn">×</button></div>`;
-    list.appendChild(item);
-  });
-  list.querySelectorAll('.engine-item .set-input').forEach(inp => { 
-    inp.addEventListener('input', (e) => { 
-      const item = e.target.closest('.engine-item'); 
-      const idx = item.dataset.idx; 
-      const key = e.target.dataset.key; 
-      config.engines[idx][key] = e.target.value; 
-      saveData(); renderEngines(); 
-    }); 
-  });
-  list.querySelectorAll('.engine-item .del-btn').forEach(btn => { 
-    btn.addEventListener('click', (e) => { 
-      const item = e.target.closest('.engine-item'); 
-      const idx = item.dataset.idx; 
-      config.engines.splice(idx, 1); 
-      if(currentEngineIdx >= config.engines.length) currentEngineIdx = 0; 
-      saveData(); renderEnginesList(); renderEngines(); 
-    }); 
-  });
-}
-
-function renderCustomButtonsList() {
-  const list = document.getElementById('custom-buttons-list');
-  if (!list) return;
-  list.innerHTML = '';
-  if (!config.customButtons) config.customButtons = [];
-  config.customButtons.forEach((btn, i) => {
-    const item = document.createElement('div');
-    item.className = 'custom-btn-item';
-    item.dataset.idx = i;
-    item.innerHTML = `<div class="settings-row"><input type="text" class="set-input" value="${btn.name || ''}" placeholder="Name" data-key="name" style="flex: 1;"><select class="set-input" data-key="position" style="flex: 0 0 120px;"><option value="left" ${btn.position === 'left' ? 'selected' : ''}>Left</option><option value="top-right" ${btn.position === 'top-right' ? 'selected' : ''}>Top Right</option><option value="bottom" ${btn.position === 'bottom' ? 'selected' : ''}>Bottom</option><option value="bottom-right" ${btn.position === 'bottom-right' ? 'selected' : ''}>Btm-Right</option></select><button class="del-btn">×</button></div><div class="settings-row"><input type="text" class="set-input" value="${btn.url || ''}" placeholder="URL" data-key="url"></div><div class="settings-row"><input type="text" class="set-input" value="${btn.icon || ''}" placeholder="Icon URL" data-key="icon"></div>`;
-    list.appendChild(item);
-  });
-  list.querySelectorAll('.set-input').forEach(inp => { 
-    const handler = (e) => { 
-      const item = e.target.closest('.custom-btn-item'); 
-      const idx = parseInt(item.dataset.idx); 
-      const key = e.target.dataset.key; 
-      config.customButtons[idx][key] = e.target.value; 
-      saveData(); renderCustomButtons(); 
-    }; 
-    inp.addEventListener('input', handler); 
-    inp.addEventListener('change', handler); 
-  });
-  list.querySelectorAll('.del-btn').forEach(btn => { 
-    btn.addEventListener('click', (e) => { 
-      const item = e.target.closest('.custom-btn-item'); 
-      const idx = parseInt(item.dataset.idx); 
-      config.customButtons.splice(idx, 1); 
-      saveData(); renderCustomButtonsList(); renderCustomButtons(); 
-    }); 
-  });
-}
-
-document.getElementById('add-shortcut').addEventListener('click', () => { 
-  shortcuts.push({ name: '', url: '', letter: '', imgUrl: '' }); 
-  saveData(); renderSettingsList(); 
-});
-
-function saveData() {
-  localStorage.setItem('start-shortcuts', JSON.stringify(shortcuts));
-  localStorage.setItem('start-config', JSON.stringify(config));
-}
-
-document.getElementById('save-settings').addEventListener('click', () => { 
-  applyConfig(); renderGrid(); renderCustomWidget(); renderCustomButtons(); renderClockStructure(); updateClock(); closeSidebar(); 
-});
-
-document.getElementById('btn-revert').addEventListener('click', () => {
-  if(!confirm("Revert to default configuration?")) return;
-  config = {...defaultConfig}; 
-  shortcuts = [...defaultShortcuts]; 
-  customThemes = {};
-  localStorage.removeItem('start-custom-themes'); 
-  localStorage.removeItem('start-focus-mode');
-  saveData(); populateSettings(); applyConfig(); renderGrid(); renderEngines(); renderCustomWidget(); renderCustomButtons(); renderClockStructure(); updateClock();
-  body.classList.remove('focus-mode');
-});
-
-// =========================================
-// PREVENT MOBILE SCROLL GESTURES
-// =========================================
-// Prevent pull-to-refresh and scroll chaining on mobile
-document.body.addEventListener('touchmove', (e) => {
-  // Allow scrolling inside sidebar and mobile settings sheet
-  if (e.target.closest('.sidebar') || e.target.closest('.mobile-settings-sheet') || e.target.closest('.search-suggestions')) {
-    return;
-  }
-  // Allow weather widget drag
-  if (e.target.closest('.weather-widget')) {
-    return;
-  }
-  // Prevent default scroll on body for mobile
-  if (isMobile()) {
-    e.preventDefault();
-  }
-}, { passive: false });
-
-// Prevent double-tap zoom
-let lastTouchEnd = 0;
-document.addEventListener('touchend', (e) => {
-  const now = Date.now();
-  if (now - lastTouchEnd <= 300) {
-    e.preventDefault();
-  }
-  lastTouchEnd = now;
-}, { passive: false });
-
-// =========================================
-// INITIALIZE ON LOAD
-// =========================================
-init();
-
-// Initial weather fetch if enabled
-if (config.showWeather) {
-  setTimeout(() => fetchWeather(), 500);
-}
-</script>
-
-</body>
-</html>
