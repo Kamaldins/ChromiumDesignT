@@ -47,6 +47,15 @@
   --focus-accent: #fabd2f;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* NEW: Independent opacity variables */
+  --search-opacity: 1;
+  --suggestions-opacity: 1;
+  --tile-opacity: 1;
+  --weather-opacity: 1;
+  --custom-btn-opacity: 1;
+  --mobile-nav-opacity: 1;
+  --center-btn-opacity: 1;
+  --custom-widget-opacity: 1;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -563,6 +572,7 @@ body.focus-mode .focus-toggle-btn:hover {
   z-index: 50;
   display: none;
   max-width: 300px;
+  opacity: var(--custom-widget-opacity);
 }
 #custom-widget-container.active { display: block; }
 
@@ -585,6 +595,7 @@ body.focus-mode .focus-toggle-btn:hover {
   font-size: var(--weather-fs);
   color: var(--fg);
   touch-action: none;
+  opacity: var(--weather-opacity);
 }
 .weather-widget.active { display: flex; }
 .weather-header { display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none; }
@@ -666,6 +677,7 @@ body.focus-mode .focus-toggle-btn:hover {
   backdrop-filter: blur(8px);
   box-shadow: 0 var(--search-z) calc(var(--search-z) * 2) rgba(0,0,0,0.2);
   transition: all 0.2s;
+  opacity: var(--center-btn-opacity);
 }
 body:not(.no-anim) .center-btn:hover {
   background: var(--fg);
@@ -700,6 +712,7 @@ body:not(.no-anim) .center-btn:hover {
   backdrop-filter: blur(8px);
   box-shadow: 0 var(--search-z) calc(var(--search-z) * 2) rgba(0,0,0,0.2);
   transition: all 0.2s;
+  opacity: var(--search-opacity);
 }
 .search-input:focus { 
   background: var(--search-text); 
@@ -709,47 +722,81 @@ body:not(.no-anim) .center-btn:hover {
 .search-input::placeholder { color: var(--search-text); opacity: 0.6; }
 .search-input:focus::placeholder { color: var(--search-bg); opacity: 0.6; }
 
-/* Suggestions now positioned relative to .search-input-wrap (just below input) */
+/* Suggestions integrated into searchbar with same design */
 .search-suggestions {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg);
+  background: var(--search-bg);
+  color: var(--search-text);
   border: 1px solid var(--search-border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   margin-top: 4px;
   display: none;
   flex-direction: column;
   z-index: 500;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 var(--search-z) calc(var(--search-z) * 3) rgba(0,0,0,0.3);
   max-height: 300px;
   overflow-y: auto;
+  opacity: var(--suggestions-opacity);
 }
 .search-suggestions.active { display: flex; }
 .search-suggestion-item {
-  padding: 12px 24px;
-  font-size: 14px;
+  padding: var(--search-y) 24px;
+  font-size: 15px;
   cursor: pointer;
-  color: var(--fg);
+  color: var(--search-text);
   background: transparent;
   border: none;
   text-align: left;
-  font-family: inherit;
+  font-family: var(--font-family);
   transition: background 0.15s;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
+  opacity: 1;
 }
-.search-suggestion-item .suggestion-icon {
-  font-size: 12px;
-  opacity: 0.5;
-  min-width: 18px;
+.search-suggestion-item:first-child {
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.search-suggestion-item:last-child {
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+.search-suggestion-item .suggestion-favicon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--search-text) 5%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.search-suggestion-item .suggestion-favicon img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+.search-suggestion-item .suggestion-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-suggestion-item .suggestion-arrow {
+  font-size: 11px;
+  opacity: 0.4;
+  flex-shrink: 0;
 }
 .search-suggestion-item:hover, .search-suggestion-item.highlighted {
-  background: color-mix(in srgb, var(--fg) 10%, var(--bg));
+  background: color-mix(in srgb, var(--search-text) 10%, transparent);
 }
 
 .engines {
@@ -825,6 +872,7 @@ body:not(.no-anim) .center-btn:hover {
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+  opacity: var(--tile-opacity);
 }
 .placeholder-box {
   background: transparent;
@@ -832,10 +880,10 @@ body:not(.no-anim) .center-btn:hover {
   cursor: pointer;
   font-size: 24px;
   font-weight: 300;
-  opacity: 0.5;
+  opacity: calc(var(--tile-opacity) * 0.5);
 }
 body:not(.no-anim) .placeholder-box:hover {
-  opacity: 1;
+  opacity: var(--tile-opacity);
   transform: translateY(-4px);
   background: color-mix(in srgb, var(--fg) 10%, var(--bg));
 }
@@ -871,7 +919,7 @@ body:not(.no-anim) .tile-wrap:hover .tile-box {
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: center;
-  opacity: 0.8;
+  opacity: calc(var(--tile-opacity) * 0.8);
   pointer-events: none;
 }
 .placeholder-wrap .tile-label { opacity: 0; }
@@ -983,6 +1031,7 @@ body:not(.no-anim) .tile-wrap:hover .tile-box {
   display: flex;
   gap: 10px;
   z-index: 90;
+  opacity: var(--custom-btn-opacity);
 }
 .custom-btn-container:empty { display: none; }
 .custom-btn-container[data-pos="left"] {
@@ -1390,6 +1439,7 @@ select.set-input { cursor: pointer; background: var(--bg); }
   justify-content: space-around;
   align-items: center;
   padding-top: 8px;
+  opacity: var(--mobile-nav-opacity);
 }
 .mobile-nav-btn {
   background: transparent;
@@ -1540,6 +1590,26 @@ select.set-input { cursor: pointer; background: var(--bg); }
 .mobile-shortcut-edit input:focus { outline: none; border-color: var(--fg); }
 .mobile-shortcut-edit .del-btn { margin-top: 6px; width: 100%; }
 
+.opacity-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.opacity-control .opacity-label {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  justify-content: space-between;
+}
+.opacity-control .opacity-value {
+  font-size: 10px;
+  opacity: 0.6;
+  font-weight: normal;
+}
+
 @media (max-width: 768px) {
   :root {
     --search-width: 92vw;
@@ -1570,7 +1640,9 @@ select.set-input { cursor: pointer; background: var(--bg); }
     height: 100dvh;
     padding: calc(10px + var(--safe-top)) 10px calc(70px + var(--safe-bottom));
     overflow: hidden;
-    justify-content: center;
+    /* Search bar higher, not centered */
+    justify-content: flex-start;
+    padding-top: calc(30px + var(--safe-top));
   }
   
   /* Larger, more visible search bar on mobile */
@@ -1583,14 +1655,23 @@ select.set-input { cursor: pointer; background: var(--bg); }
   }
   .search-input::placeholder { opacity: 0.5; }
   
-  /* Suggestions dropdown - mobile friendly */
+  /* Suggestions dropdown - mobile friendly, integrated with searchbar */
   .search-suggestions {
-    max-height: 250px;
+    max-height: 280px;
     border-width: 2px;
+    border-radius: var(--r-lg);
   }
   .search-suggestion-item {
     padding: 16px 20px;
     font-size: 15px;
+  }
+  .search-suggestion-item .suggestion-favicon {
+    width: 24px;
+    height: 24px;
+  }
+  .search-suggestion-item .suggestion-favicon img {
+    width: 18px;
+    height: 18px;
   }
   
   .weather-widget {
@@ -1631,6 +1712,11 @@ select.set-input { cursor: pointer; background: var(--bg); }
   
   /* Settings sidebar full width on mobile */
   .sidebar { max-width: 100vw; }
+  
+  /* Mobile shortcuts opacity applied */
+  .tile-box, .tile-label, .placeholder-box {
+    opacity: var(--tile-opacity);
+  }
 }
 @media (max-width: 480px) {
   :root {
@@ -1848,7 +1934,7 @@ select.set-input { cursor: pointer; background: var(--bg); }
         <summary class="accordion-summary">Focus Mode (Unified)</summary>
         <div class="accordion-content">
           <div class="control-group">
-            <span class="sub-label">Focus Mode hides all distractions (clock stays). Trigger it with F key, the button, or double-click.</span>
+            <span class="sub-label">Focus Mode hides all distractions (clock stays). Trigger it with F key, the button, or double-click on clock.</span>
             <label class="checkbox-wrap" for="cfg-focus-note-toggle">
               <input type="checkbox" id="cfg-focus-note-toggle"> Show Focus Note
             </label>
@@ -1859,7 +1945,7 @@ select.set-input { cursor: pointer; background: var(--bg); }
               <input type="checkbox" id="cfg-greeting-toggle"> Show Greeting Message
             </label>
             <label class="checkbox-wrap" for="cfg-dblclick-focus">
-              <input type="checkbox" id="cfg-dblclick-focus"> Double-Click to Toggle Focus
+              <input type="checkbox" id="cfg-dblclick-focus"> Double-Click Clock to Toggle Focus
             </label>
             <label class="sub-label" for="cfg-focus-duration-slider" style="margin-top: 10px;">Focus Work Duration (min) <span class="default-val">Default: 25</span></label>
             <div class="range-wrap">
@@ -1869,6 +1955,71 @@ select.set-input { cursor: pointer; background: var(--bg); }
             <label class="sub-label" for="cfg-focus-accent" style="margin-top: 10px;">Focus Accent Color</label>
             <div class="color-picker">
               <input type="color" id="cfg-focus-accent" aria-label="Focus accent color"> <span>Accent</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-item" open>
+        <summary class="accordion-summary">Opacity & Transparency</summary>
+        <div class="accordion-content">
+          <div class="control-group">
+            <span class="sub-label">Control the transparency of each element independently. 1 = fully opaque, 0 = fully transparent.</span>
+            <div class="opacity-control">
+              <div class="opacity-label"><span>Search Bar Opacity</span><span class="opacity-value" id="opacity-search-val">100%</span></div>
+              <div class="range-wrap">
+                <input type="range" id="cfg-opacity-search-slider" min="0" max="100" step="5" aria-label="Search opacity">
+                <input type="number" id="cfg-opacity-search-num" class="set-input num-input" min="0" max="100">
+              </div>
+            </div>
+            <div class="opacity-control">
+              <div class="opacity-label"><span>Search Suggestions Opacity</span><span class="opacity-value" id="opacity-suggestions-val">100%</span></div>
+              <div class="range-wrap">
+                <input type="range" id="cfg-opacity-suggestions-slider" min="0" max="100" step="5" aria-label="Suggestions opacity">
+                <input type="number" id="cfg-opacity-suggestions-num" class="set-input num-input" min="0" max="100">
+              </div>
+            </div>
+            <div class="opacity-control">
+              <div class="opacity-label"><span>Shortcuts/Tiles Opacity</span><span class="opacity-value" id="opacity-tile-val">100%</span></div>
+              <div class="range-wrap">
+                <input type="range" id="cfg-opacity-tile-slider" min="0" max="100" step="5" aria-label="Tiles opacity">
+                <input type="number" id="cfg-opacity-tile-num" class="set-input num-input" min="0" max="100">
+              </div>
+            </div>
+            <div class="opacity-control">
+              <div class="opacity-label"><span>Weather Widget Opacity</span><span class="opacity-value" id="opacity-weather-val">100%</span></div>
+              <div class="range-wrap">
+                <input type="range" id="cfg-opacity-weather-slider" min="0" max="100" step="5" aria-label="Weather opacity">
+                <input type="number" id="cfg-opacity-weather-num" class="set-input num-input" min="0" max="100">
+              </div>
+            </div>
+            <div class="opacity-control">
+              <div class="opacity-label"><span>Custom Buttons Opacity</span><span class="opacity-value" id="opacity-custom-btn-val">100%</span></div>
+              <div class="range-wrap">
+                <input type="range" id="cfg-opacity-custom-btn-slider" min="0" max="100" step="5" aria-label="Custom buttons opacity">
+                <input type="number" id="cfg-opacity-custom-btn-num" class="set-input num-input" min="0" max="100">
+              </div>
+            </div>
+            <div class="opacity-control">
+              <div class="opacity-label"><span>Mobile Nav Opacity</span><span class="opacity-value" id="opacity-mobile-nav-val">100%</span></div>
+              <div class="range-wrap">
+                <input type="range" id="cfg-opacity-mobile-nav-slider" min="0" max="100" step="5" aria-label="Mobile nav opacity">
+                <input type="number" id="cfg-opacity-mobile-nav-num" class="set-input num-input" min="0" max="100">
+              </div>
+            </div>
+            <div class="opacity-control">
+              <div class="opacity-label"><span>Center Button Opacity</span><span class="opacity-value" id="opacity-center-btn-val">100%</span></div>
+              <div class="range-wrap">
+                <input type="range" id="cfg-opacity-center-btn-slider" min="0" max="100" step="5" aria-label="Center button opacity">
+                <input type="number" id="cfg-opacity-center-btn-num" class="set-input num-input" min="0" max="100">
+              </div>
+            </div>
+            <div class="opacity-control">
+              <div class="opacity-label"><span>Custom Widget Opacity</span><span class="opacity-value" id="opacity-custom-widget-val">100%</span></div>
+              <div class="range-wrap">
+                <input type="range" id="cfg-opacity-custom-widget-slider" min="0" max="100" step="5" aria-label="Custom widget opacity">
+                <input type="number" id="cfg-opacity-custom-widget-num" class="set-input num-input" min="0" max="100">
+              </div>
             </div>
           </div>
         </div>
@@ -2441,7 +2592,7 @@ const defaultConfig = {
   gridGap: 50,
   posX: 0,
   posY: 0,
-  showEngines: true,
+  showEngines: false,
   showCredits: true,
   showGithubBtn: true,
   showFocusNote: false,
@@ -2499,7 +2650,16 @@ const defaultConfig = {
   showSeconds: false,
   clock24h: true,
   useCustomWidget: false,
-  customWidgetCode: '<div style="color: var(--fg); font-size: 24px; font-weight: bold;">DesignT</div>'
+  customWidgetCode: '<div style="color: var(--fg); font-size: 24px; font-weight: bold;">DesignT</div>',
+  // NEW: Independent opacity values (0-100, where 100 = fully opaque)
+  opacitySearch: 100,
+  opacitySuggestions: 100,
+  opacityTile: 100,
+  opacityWeather: 100,
+  opacityCustomBtn: 100,
+  opacityMobileNav: 100,
+  opacityCenterBtn: 100,
+  opacityCustomWidget: 100
 };
 
 // =========================================
@@ -2520,6 +2680,15 @@ if (!config.focusAccent) config.focusAccent = '#fabd2f';
 if (!config.wallpaperSource) config.wallpaperSource = 'nature';
 if (!config.bgImage) config.bgImage = natureImages[0];
 if (config.weatherAutoRefresh === undefined) config.weatherAutoRefresh = true;
+// NEW: Initialize opacity values
+if (config.opacitySearch === undefined) config.opacitySearch = 100;
+if (config.opacitySuggestions === undefined) config.opacitySuggestions = 100;
+if (config.opacityTile === undefined) config.opacityTile = 100;
+if (config.opacityWeather === undefined) config.opacityWeather = 100;
+if (config.opacityCustomBtn === undefined) config.opacityCustomBtn = 100;
+if (config.opacityMobileNav === undefined) config.opacityMobileNav = 100;
+if (config.opacityCenterBtn === undefined) config.opacityCenterBtn = 100;
+if (config.opacityCustomWidget === undefined) config.opacityCustomWidget = 100;
 let customThemes = JSON.parse(localStorage.getItem('start-custom-themes')) || {};
 let currentEngineIdx = 0;
 let globalWeatherData = null;
@@ -2975,6 +3144,7 @@ function init() {
   bindSearchAutocomplete();
   bindTouchDragDrop();
   bindMobileUI();
+  bindOpacityControls();
   updateOfflineStatus();
   updateCacheStatus();
   registerServiceWorker();
@@ -3013,19 +3183,19 @@ function handleWindowResize() {
 
 // =========================================
 // FOCUS MODE TRIGGERS
+// Only trigger on clock double-click, NOT main content
 // =========================================
 function bindFocusModeTriggers() {
   let lastTouchTime = 0;
   document.addEventListener('touchend', () => { lastTouchTime = Date.now(); }, { passive: true, capture: true });
   
-  document.addEventListener('dblclick', (e) => {
+  // Only trigger on clock double-click, not on main content wrapper
+  clockContainer.addEventListener('dblclick', (e) => {
     if (!config.dblclickFocus) return;
     if (Date.now() - lastTouchTime < 500) return;
-    if (e.target === document.body || 
-        e.target.classList.contains('content-wrapper') ||
-        e.target === clockContainer) {
-      toggleFocusMode();
-    }
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFocusMode();
   });
 }
 
@@ -3064,6 +3234,7 @@ function bindKeyboardShortcuts() {
 // =========================================
 // SEARCH AUTOCOMPLETE - Uses Wikipedia opensearch API (CORS-friendly)
 // + DuckDuckGo as fallback. Also uses search engine for live results.
+// Results include favicons from the integrated favicon service.
 // =========================================
 let searchSuggestTimeout;
 let currentSuggestionIdx = -1;
@@ -3149,7 +3320,7 @@ function bindSearchAutocomplete() {
       updateSuggestionHighlight();
     } else if (e.key === 'Enter' && currentSuggestionIdx > -1) {
       e.preventDefault();
-      searchInput.value = currentSuggestions[currentSuggestionIdx];
+      searchInput.value = currentSuggestions[currentSuggestionIdx].text || currentSuggestions[currentSuggestionIdx];
       hideSearchSuggestions();
       performSearch();
     } else if (e.key === 'Escape') {
@@ -3167,13 +3338,13 @@ function getIndexSuggestions(query) {
   const results = [];
   shortcuts.forEach(s => {
     if (s.name && s.name.toLowerCase().includes(q)) {
-      results.push(s.name);
+      results.push({ text: s.name, url: s.url, type: 'shortcut' });
     }
   });
   SEARCH_INDEX.forEach(item => {
     if (item.name.toLowerCase().includes(q) || 
         item.keywords.some(k => k.includes(q))) {
-      results.push(item.name);
+      results.push({ text: item.name, url: item.url, type: 'index' });
     }
   });
   return results.slice(0, 5);
@@ -3186,36 +3357,81 @@ function showOfflineSuggestions(query) {
   }
 }
 
+// Show search suggestions with favicons from integrated favicon service
 function showSearchSuggestions(suggestions, query = '') {
   searchSuggestions.innerHTML = '';
-  currentSuggestions = suggestions;
+  // Normalize suggestions to objects with text/url/type
+  currentSuggestions = suggestions.map(s => {
+    if (typeof s === 'string') {
+      return { text: s, url: null, type: 'search' };
+    }
+    return s;
+  });
   currentSuggestionIdx = -1;
-  if (suggestions.length === 0) { hideSearchSuggestions(); return; }
-  suggestions.forEach((s) => {
+  if (currentSuggestions.length === 0) { hideSearchSuggestions(); return; }
+  
+  currentSuggestions.forEach((s) => {
     const item = document.createElement('button');
     item.type = 'button';
     item.className = 'search-suggestion-item';
     
-    const indexItem = SEARCH_INDEX.find(i => i.name === s);
-    const shortcutItem = shortcuts.find(sc => sc.name === s);
-    const icon = document.createElement('span');
-    icon.className = 'suggestion-icon';
-    icon.textContent = indexItem ? '★' : (shortcutItem ? '▣' : '🔍');
+    // Favicon container
+    const faviconWrap = document.createElement('span');
+    faviconWrap.className = 'suggestion-favicon';
     
-    const text = document.createElement('span');
-    text.textContent = s;
+    // Determine the favicon URL based on suggestion type
+    let faviconUrl = '';
+    let iconChar = '🔍';
     
-    item.appendChild(icon);
-    item.appendChild(text);
+    if (s.type === 'shortcut' || s.type === 'index') {
+      // Use the integrated favicon service for known sites
+      faviconUrl = getFaviconUrl(s.url);
+      iconChar = s.type === 'shortcut' ? '★' : '▣';
+    } else {
+      // For search suggestions, try to extract a domain or use search icon
+      iconChar = '🔍';
+    }
+    
+    if (faviconUrl) {
+      const img = document.createElement('img');
+      img.src = faviconUrl;
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = () => {
+        faviconWrap.textContent = iconChar;
+      };
+      faviconWrap.appendChild(img);
+    } else {
+      faviconWrap.textContent = iconChar;
+    }
+    
+    // Suggestion text
+    const textEl = document.createElement('span');
+    textEl.className = 'suggestion-text';
+    textEl.textContent = s.text;
+    
+    // Arrow icon
+    const arrow = document.createElement('span');
+    arrow.className = 'suggestion-arrow';
+    arrow.textContent = '↵';
+    
+    item.appendChild(faviconWrap);
+    item.appendChild(textEl);
+    item.appendChild(arrow);
     item.setAttribute('role', 'option');
     
     // Use pointerdown for touch, mousedown for mouse
     const selectSuggestion = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      searchInput.value = s;
+      searchInput.value = s.text;
       hideSearchSuggestions();
-      performSearch();
+      // If it's a known site, go directly to it
+      if (s.url && (s.type === 'shortcut' || s.type === 'index')) {
+        window.location.href = s.url;
+      } else {
+        performSearch();
+      }
     };
     item.addEventListener('mousedown', selectSuggestion);
     item.addEventListener('touchstart', selectSuggestion, { passive: false });
@@ -3523,6 +3739,17 @@ function applyConfig() {
   rootStyle.setProperty('--bg-blur', (config.bgImageBlur || 0) + 'px');
   rootStyle.setProperty('--ui-scale', (config.uiScale || 100) + '%');
   rootStyle.setProperty('--focus-accent', config.focusAccent || '#fabd2f');
+  
+  // NEW: Apply independent opacity values
+  rootStyle.setProperty('--search-opacity', (config.opacitySearch ?? 100) / 100);
+  rootStyle.setProperty('--suggestions-opacity', (config.opacitySuggestions ?? 100) / 100);
+  rootStyle.setProperty('--tile-opacity', (config.opacityTile ?? 100) / 100);
+  rootStyle.setProperty('--weather-opacity', (config.opacityWeather ?? 100) / 100);
+  rootStyle.setProperty('--custom-btn-opacity', (config.opacityCustomBtn ?? 100) / 100);
+  rootStyle.setProperty('--mobile-nav-opacity', (config.opacityMobileNav ?? 100) / 100);
+  rootStyle.setProperty('--center-btn-opacity', (config.opacityCenterBtn ?? 100) / 100);
+  rootStyle.setProperty('--custom-widget-opacity', (config.opacityCustomWidget ?? 100) / 100);
+  
   searchInput.placeholder = config.searchText || 'Search or enter address';
   rootStyle.setProperty('--search-bg', config.searchBg || `color-mix(in srgb, ${config.fg} 5%, ${config.bg})`);
   rootStyle.setProperty('--search-text', config.searchTextColor || config.fg);
@@ -4101,6 +4328,43 @@ document.addEventListener('keydown', (e) => {
 });
 
 // =========================================
+// OPACITY CONTROLS BINDING
+// =========================================
+function bindOpacityControls() {
+  const opacityMap = {
+    'search': { configKey: 'opacitySearch', cssVar: '--search-opacity', valEl: 'opacity-search-val' },
+    'suggestions': { configKey: 'opacitySuggestions', cssVar: '--suggestions-opacity', valEl: 'opacity-suggestions-val' },
+    'tile': { configKey: 'opacityTile', cssVar: '--tile-opacity', valEl: 'opacity-tile-val' },
+    'weather': { configKey: 'opacityWeather', cssVar: '--weather-opacity', valEl: 'opacity-weather-val' },
+    'custom-btn': { configKey: 'opacityCustomBtn', cssVar: '--custom-btn-opacity', valEl: 'opacity-custom-btn-val' },
+    'mobile-nav': { configKey: 'opacityMobileNav', cssVar: '--mobile-nav-opacity', valEl: 'opacity-mobile-nav-val' },
+    'center-btn': { configKey: 'opacityCenterBtn', cssVar: '--center-btn-opacity', valEl: 'opacity-center-btn-val' },
+    'custom-widget': { configKey: 'opacityCustomWidget', cssVar: '--custom-widget-opacity', valEl: 'opacity-custom-widget-val' }
+  };
+  
+  Object.keys(opacityMap).forEach(key => {
+    const slider = document.getElementById(`cfg-opacity-${key}-slider`);
+    const num = document.getElementById(`cfg-opacity-${key}-num`);
+    const valEl = document.getElementById(opacityMap[key].valEl);
+    if (!slider || !num) return;
+    
+    const update = (val) => {
+      val = Math.max(0, Math.min(100, Number(val)));
+      if (isNaN(val)) return;
+      slider.value = val;
+      num.value = val;
+      config[opacityMap[key].configKey] = val;
+      rootStyle.setProperty(opacityMap[key].cssVar, val / 100);
+      if (valEl) valEl.textContent = val + '%';
+      saveData();
+    };
+    
+    slider.addEventListener('input', (e) => update(e.target.value));
+    num.addEventListener('input', (e) => update(e.target.value));
+  });
+}
+
+// =========================================
 // MOBILE UI BINDING
 // =========================================
 function bindMobileUI() {
@@ -4206,6 +4470,59 @@ function populateMobileSettings() {
         <span class="label">Foreground</span>
         <div class="control">
           <input type="color" id="mobile-fg-color" value="${config.fg}">
+        </div>
+      </div>
+    </div>
+    
+    <!-- Opacity Section -->
+    <div class="mobile-settings-section">
+      <h3>Opacity & Transparency</h3>
+      <div class="opacity-control">
+        <div class="opacity-label"><span>Search Bar</span><span class="opacity-value" id="m-opacity-search-val">${config.opacitySearch}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-search-slider" min="0" max="100" step="5" value="${config.opacitySearch}">
+        </div>
+      </div>
+      <div class="opacity-control">
+        <div class="opacity-label"><span>Suggestions</span><span class="opacity-value" id="m-opacity-suggestions-val">${config.opacitySuggestions}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-suggestions-slider" min="0" max="100" step="5" value="${config.opacitySuggestions}">
+        </div>
+      </div>
+      <div class="opacity-control">
+        <div class="opacity-label"><span>Shortcuts</span><span class="opacity-value" id="m-opacity-tile-val">${config.opacityTile}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-tile-slider" min="0" max="100" step="5" value="${config.opacityTile}">
+        </div>
+      </div>
+      <div class="opacity-control">
+        <div class="opacity-label"><span>Weather</span><span class="opacity-value" id="m-opacity-weather-val">${config.opacityWeather}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-weather-slider" min="0" max="100" step="5" value="${config.opacityWeather}">
+        </div>
+      </div>
+      <div class="opacity-control">
+        <div class="opacity-label"><span>Custom Buttons</span><span class="opacity-value" id="m-opacity-custom-btn-val">${config.opacityCustomBtn}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-custom-btn-slider" min="0" max="100" step="5" value="${config.opacityCustomBtn}">
+        </div>
+      </div>
+      <div class="opacity-control">
+        <div class="opacity-label"><span>Mobile Nav</span><span class="opacity-value" id="m-opacity-mobile-nav-val">${config.opacityMobileNav}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-mobile-nav-slider" min="0" max="100" step="5" value="${config.opacityMobileNav}">
+        </div>
+      </div>
+      <div class="opacity-control">
+        <div class="opacity-label"><span>Center Button</span><span class="opacity-value" id="m-opacity-center-btn-val">${config.opacityCenterBtn}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-center-btn-slider" min="0" max="100" step="5" value="${config.opacityCenterBtn}">
+        </div>
+      </div>
+      <div class="opacity-control">
+        <div class="opacity-label"><span>Custom Widget</span><span class="opacity-value" id="m-opacity-custom-widget-val">${config.opacityCustomWidget}%</span></div>
+        <div class="range-wrap">
+          <input type="range" id="m-opacity-custom-widget-slider" min="0" max="100" step="5" value="${config.opacityCustomWidget}">
         </div>
       </div>
     </div>
@@ -4355,6 +4672,30 @@ function populateMobileSettings() {
       saveData();
       renderGrid();
       populateMobileSettings();
+    });
+  });
+  
+  // Bind opacity sliders on mobile
+  const opacityMap = {
+    'search': { configKey: 'opacitySearch', cssVar: '--search-opacity', valEl: 'm-opacity-search-val' },
+    'suggestions': { configKey: 'opacitySuggestions', cssVar: '--suggestions-opacity', valEl: 'm-opacity-suggestions-val' },
+    'tile': { configKey: 'opacityTile', cssVar: '--tile-opacity', valEl: 'm-opacity-tile-val' },
+    'weather': { configKey: 'opacityWeather', cssVar: '--weather-opacity', valEl: 'm-opacity-weather-val' },
+    'custom-btn': { configKey: 'opacityCustomBtn', cssVar: '--custom-btn-opacity', valEl: 'm-opacity-custom-btn-val' },
+    'mobile-nav': { configKey: 'opacityMobileNav', cssVar: '--mobile-nav-opacity', valEl: 'm-opacity-mobile-nav-val' },
+    'center-btn': { configKey: 'opacityCenterBtn', cssVar: '--center-btn-opacity', valEl: 'm-opacity-center-btn-val' },
+    'custom-widget': { configKey: 'opacityCustomWidget', cssVar: '--custom-widget-opacity', valEl: 'm-opacity-custom-widget-val' }
+  };
+  Object.keys(opacityMap).forEach(key => {
+    const slider = mobileSheetContent.querySelector(`#m-opacity-${key}-slider`);
+    if (!slider) return;
+    slider.addEventListener('input', (e) => {
+      const val = Math.max(0, Math.min(100, Number(e.target.value)));
+      config[opacityMap[key].configKey] = val;
+      rootStyle.setProperty(opacityMap[key].cssVar, val / 100);
+      const valEl = mobileSheetContent.querySelector('#' + opacityMap[key].valEl);
+      if (valEl) valEl.textContent = val + '%';
+      saveData();
     });
   });
   
@@ -4577,7 +4918,7 @@ document.getElementById('settings-search').addEventListener('input', (e) => {
   if (query === '') { 
     accordions.forEach(acc => { 
       acc.style.display = ''; 
-      acc.open = acc.querySelector('summary').textContent.includes('Clock') || acc.querySelector('summary').textContent.includes('Focus'); 
+      acc.open = acc.querySelector('summary').textContent.includes('Clock') || acc.querySelector('summary').textContent.includes('Focus') || acc.querySelector('summary').textContent.includes('Opacity'); 
     }); 
     return; 
   }
@@ -4897,6 +5238,28 @@ function populateSettings() {
   setSync('clock-x', config.clockX || 0); setSync('clock-y', config.clockY || 0);
   setSync('bg-brightness', config.bgImageBrightness || 100); setSync('bg-blur', config.bgImageBlur || 0);
   setSync('ui-scale', config.uiScale || 100); setSync('focus-duration', config.focusDuration || 25);
+  
+  // NEW: Set opacity slider/num values
+  const opacityKeys = ['search', 'suggestions', 'tile', 'weather', 'custom-btn', 'mobile-nav', 'center-btn', 'custom-widget'];
+  const opacityConfigKeys = {
+    'search': 'opacitySearch', 'suggestions': 'opacitySuggestions', 'tile': 'opacityTile',
+    'weather': 'opacityWeather', 'custom-btn': 'opacityCustomBtn', 'mobile-nav': 'opacityMobileNav',
+    'center-btn': 'opacityCenterBtn', 'custom-widget': 'opacityCustomWidget'
+  };
+  const opacityValIds = {
+    'search': 'opacity-search-val', 'suggestions': 'opacity-suggestions-val', 'tile': 'opacity-tile-val',
+    'weather': 'opacity-weather-val', 'custom-btn': 'opacity-custom-btn-val', 'mobile-nav': 'opacity-mobile-nav-val',
+    'center-btn': 'opacity-center-btn-val', 'custom-widget': 'opacity-custom-widget-val'
+  };
+  opacityKeys.forEach(key => {
+    const val = config[opacityConfigKeys[key]] ?? 100;
+    const slider = document.getElementById(`cfg-opacity-${key}-slider`);
+    const num = document.getElementById(`cfg-opacity-${key}-num`);
+    const valEl = document.getElementById(opacityValIds[key]);
+    if (slider) slider.value = val;
+    if (num) num.value = val;
+    if (valEl) valEl.textContent = val + '%';
+  });
   
   if (config.bgImage) {
     if (config.wallpaperSource === 'upload') {
